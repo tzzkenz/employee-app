@@ -5,6 +5,7 @@ from sqlalchemy import Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from models import Entity
+from models.department import employee_departments
 
 def _datetime_to_iso(value: datetime | None) -> str | None:
     if value is None:
@@ -21,6 +22,8 @@ class Employee(Entity):
   age: Mapped[int] = mapped_column(Integer, nullable=False)
 
   addresses: Mapped[list["Address"]] = relationship("Address", back_populates="employee", cascade="all, delete-orphan")
+
+  departments: Mapped[list["Department"]] = relationship("Department", secondary=employee_departments, back_populates="employees")
 
 
 def to_api_dict(self) -> dict[str, Any]:
