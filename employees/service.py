@@ -29,20 +29,20 @@ async def create_employee( body: EmployeeCreate, db: AsyncSession):
   return employee
 
 async def get_all_employees(db: AsyncSession) -> list[Employee]:
-  employees = await repository.get_all(db)
+  employees = await repository.get_all_employees(db)
 
   return employees
 
-async def get_employee( id: int, db: AsyncSession) -> Employee:
-  employee = await repository.get_employee(id, db)
+async def get_employee( employee_id: int, db: AsyncSession) -> Employee:
+  employee = await repository.get_employee(employee_id, db)
 
   if employee is None:
     raise NotFoundException(detail="Employee not found in DB")
 
   return employee
 
-async def delete_employee(id: int, db: AsyncSession)  -> Employee:
-  employee: Employee = await repository.get_employee(id, db)
+async def delete_employee(employee_id: int, db: AsyncSession)  -> Employee:
+  employee: Employee = await repository.get_employee(employee_id, db)
 
   if employee is None or employee.deleted_at is not None:
     raise NotFoundException(detail="Employee not found in DB")
@@ -51,8 +51,8 @@ async def delete_employee(id: int, db: AsyncSession)  -> Employee:
 
   return deleted_employee
 
-async def patch_employee(id: int, body: EmployeePatch, db: AsyncSession, ) -> Employee:
-  original_employee: Employee = await repository.get_employee(id, db)
+async def patch_employee(employee_id: int, body: EmployeePatch, db: AsyncSession, ) -> Employee:
+  original_employee: Employee = await repository.get_employee(employee_id, db)
 
   if original_employee is None:
     raise NotFoundException("Requested employee is not present in the DB")
@@ -63,25 +63,13 @@ async def patch_employee(id: int, body: EmployeePatch, db: AsyncSession, ) -> Em
     original_employee.email = body.email
   if body.age is not None:
     original_employee.age = body.age
-  # if body.address is not None:
-  #   address = Address()
-  #   if body.address.street is not None:
-  #     address.street = body.address.street  
-  #   if body.address.city is not None:
-  #     address.city = body.address.city  
-  #   if body.address.country is not None:
-  #     address.country = body.address.country  
-  #   if body.address.postal_code is not None:
-  #     address.postal_code = body.address.postal_code
-
-    # original_employee.addresses.append(address)  
 
   patched_employee = await repository.patch_employee(db, original_employee)
   return patched_employee
   
 
-async def create_address(id: int, body: AddressCreate, db: AsyncSession):
-  employee = await repository.get_employee(id, db)
+async def create_address(employee_id: int, body: AddressCreate, db: AsyncSession):
+  employee = await repository.get_employee(employee_id, db)
 
   if employee is None or employee.deleted_at is not None:
     raise NotFoundException("Requested employee is not present in the DB")
@@ -130,8 +118,8 @@ async def patch_address(address_id: int, body: EmployeePatch, db: AsyncSession):
   patched_address = await repository.patch_address(original_address, db)
   return patched_address
 
-async def get_all_addresses(id: int, db: AsyncSession):
-  employees = await repository.get_all_addresses(id, db)
+async def get_all_addresses(employee_id: int, db: AsyncSession):
+  employees = await repository.get_all_addresses(employee_id, db)
   return employees
 
 

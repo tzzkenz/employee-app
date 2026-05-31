@@ -53,7 +53,7 @@ class AddressResponse(BaseModel):
   model_config=ConfigDict(from_attributes=True)
 
 
-class EmployeePatch(BaseModel):
+class AddressPatch(BaseModel):
   street: str = Field(default=None)
   city: str = Field(default=None)
   country: str = Field(default=None)
