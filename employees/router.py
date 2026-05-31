@@ -28,7 +28,7 @@ async def patch_employee(employee_id: int, body: EmployeePatch, db: AsyncSession
   return await service.patch_employee(employee_id, body, db)
 
 @router.post("/{employee_id}/address", response_model=AddressResponse)
-async def create_adress(employee_id: int, body: AddressCreate, db: AsyncSession = Depends(get_db)):
+async def create_address(employee_id: int, body: AddressCreate, db: AsyncSession = Depends(get_db)):
   return await service.create_address(employee_id, body, db)
 
 @router.get("/address/{address_id}", response_model=AddressResponse)
@@ -51,6 +51,6 @@ async def patch_address(address_id: int, body: AddressPatch, db: AsyncSession = 
 async def add_department_to_employee(employee_id: int, department_id: int, db: AsyncSession = Depends(get_db)):
     return await service.add_department_to_employee(employee_id, department_id, db)
 
-@router.delete("/{employee_id}/employee/{department_id}", response_model=EmployeeResponse)
+@router.delete("/{employee_id}/department/{department_id}", response_model=EmployeeResponse)
 async def delete_department_from_employee(employee_id: int, department_id: int, db: AsyncSession = Depends(get_db)):
    return await service.delete_department_from_employee(employee_id, department_id, db)
