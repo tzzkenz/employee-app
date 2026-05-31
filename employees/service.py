@@ -7,6 +7,7 @@ from exceptions.handler import NotFoundException
 from models import address
 from models.address import Address
 from models.employee import Employee
+from auth.utils import hash_password
 
 
 async def create_employee( body: EmployeeCreate, db: AsyncSession) -> Employee:
@@ -15,6 +16,7 @@ async def create_employee( body: EmployeeCreate, db: AsyncSession) -> Employee:
   employee.name = body.name.strip()
   employee.age = body.age
   employee.email = body.email.strip()
+  employee.password_hash = hash_password(body.password)
 
   if body.address:
     address = Address()

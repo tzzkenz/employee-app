@@ -32,6 +32,7 @@ class EmployeeCreate(BaseModel):
   email: EmailStr
   age: int
   address: AddressCreate | None = Field(default=None, Nullable=True)
+  password: str
 
 class EmployeePatch(BaseModel):
   name: str = Field(min_length=2, default=None)

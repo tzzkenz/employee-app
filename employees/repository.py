@@ -74,3 +74,8 @@ async def add_department_to_employee(employee: Employee, db: AsyncSession) -> Em
 
 async def delete_department_from_employee(employee: Employee, db: AsyncSession) -> Employee:
   return await save(employee, db)
+
+async def get_by_email(email: str, db: AsyncSession) -> Employee:
+  statement = select(Employee).where(Employee.email == email, Employee.deleted_at.is_(None))
+  result = await db.scalars(statement)
+  return result.one_or_none()
