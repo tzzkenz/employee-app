@@ -64,6 +64,6 @@ class EmployeeResponse(BaseModel):
   name: str
   email: EmailStr
   age: int
-  # address: AddressResponse
+  # address: list[AddressResponse] | None = Field(default=None)
 
   model_config=ConfigDict(from_attributes=True)

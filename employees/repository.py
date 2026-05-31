@@ -6,16 +6,14 @@ from sqlalchemy.orm import selectinload
 from exceptions.handler import AppException
 from models import Employee
 from models.address import Address
-
-async def commit_or_rollback(db: AsyncSession) -> None:
+  
+  
+async def save(entity, db: AsyncSession):
   try:
     await db.commit()
   except IntegrityError as e:
     await db.rollback()
     raise AppException(detail=f"Something went wrong: {str(e)}")
-  
-async def save(entity, db: AsyncSession):
-  await commit_or_rollback(db)
   await db.refresh(entity)
   return entity
 
@@ -34,7 +32,7 @@ async def get_employee(employee_id: int, db: AsyncSession ) -> Employee | None:
   result = await db.scalars(statement)
   return result.one_or_none()
 
-async def delete_employee(db: AsyncSession, employee: Employee) -> Employee:
+async def delete_employee(employee: Employee, db: AsyncSession) -> Employee:
   employee.deleted_at = datetime.now(UTC)
   db.add(employee)
   return await save(employee, db)

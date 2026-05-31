@@ -9,3 +9,6 @@ class DepartmentResponse(BaseModel):
   name: str
 
   model_config=ConfigDict(from_attributes=True)
+
+class DepartmentPatch(BaseModel):
+  name: str | None = Field(default=False)

@@ -46,7 +46,7 @@ async def delete_employee(employee_id: int, db: AsyncSession)  -> Employee:
   if employee is None or employee.deleted_at is not None:
     raise NotFoundException(detail="Employee not found in DB")
   
-  deleted_employee: Employee = await repository.delete_employee(db, employee)
+  deleted_employee: Employee = await repository.delete_employee(employee,db)
 
   return deleted_employee
 
