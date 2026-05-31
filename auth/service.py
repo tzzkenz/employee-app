@@ -40,7 +40,7 @@ def refresh_token_service(refresh_token: str):
         )
 
         if payload.get("type") != "refresh":
-            raise HTTPException(status_code=401, detail="Invalid refresh token")
+            raise UnauthorizedException("Invalid refresh token")
 
         email = payload.get("email")
         id = payload.get("id")
@@ -56,4 +56,4 @@ def refresh_token_service(refresh_token: str):
         }
 
     except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+        raise UnauthorizedException("Invalid or expired refresh token")

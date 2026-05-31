@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from uvicorn import lifespan
 from database import create_tables
+from exceptions.handler import register_exception_handlers
 from middleware import RequestLoggingMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 from employees.router import router as employee_router
@@ -41,6 +42,8 @@ logging.basicConfig(
 app.include_router(employee_router)
 app.include_router(department_router)
 app.include_router(auth_router)
+
+register_exception_handlers(app)
 
 @app.get("/health", tags=["Health Check"])
 def health():
