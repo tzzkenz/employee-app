@@ -23,3 +23,10 @@ def decode_access_token(token: str):
     return jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
   except JWTError:
     return None
+  
+def create_refresh_token(payload):
+  to_encode = payload.copy()
+  expire = datetime.now() + timedelta(days=7)
+  to_encode["exp"] = expire
+  to_encode["type"] = "refresh"
+  return jwt.encode(to_encode, settings.jwt_secret, settings.jwt_algorithm)
