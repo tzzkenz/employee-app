@@ -2,6 +2,7 @@ from datetime import datetime
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from exceptions.handler import AppException, ConflictException
 from models import Employee
 from models.address import Address
@@ -103,3 +104,28 @@ async def get_all_addresses(id: int, db: AsyncSession):
   result = await db.scalars(statement)
 
   return result.all()
+
+async def get_employee_with_department(employee_id: int, db: AsyncSession):
+  statement = select(Employee).options(selectinload(Employee.departments)).where(Employee.id == employee_id)
+  result = await db.scalars(statement)
+  return result.first()
+
+async def add_department_to_employee(employee: Employee, db: AsyncSession):
+  try:
+    await db.commit()
+  except IntegrityError as e:
+    await db.rollback()
+    raise AppException(detail=f"Something went wrong: {str(e)}")
+    
+  await db.refresh(employee)
+  return employee
+
+async def delete_department_from_employee(employee: Employee, db: AsyncSession):
+  try:
+    await db.commit()
+  except IntegrityError as e:
+    await db.rollback()
+    raise AppException(detail=f"Something went wrong: {str(e)}")
+    
+  await db.refresh(employee)
+  return employee

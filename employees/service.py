@@ -1,6 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import employees.repository as repository
+import departments.repository as department_repository
 from employees.schema import AddressCreate, EmployeeCreate, EmployeePatch
 from exceptions.handler import BadRequestException, NotFoundException
 from models import employee
@@ -23,11 +24,6 @@ async def create_employee( body: EmployeeCreate, db: AsyncSession):
     address.postal_code = body.address.postal_code.strip()
 
     employee.addresses.append(address)
-
-  if not isinstance(employee.name, str) or not employee.name:
-    raise BadRequestException(detail="email must be a non-empty string")
-  if not isinstance(employee.email, str) or not employee.email:
-    raise BadRequestException(detail="email must be a non-empty string")
   
   employee = await repository.create_employee(employee, db)
   return employee
@@ -124,13 +120,10 @@ async def patch_address(address_id: int, body: EmployeePatch, db: AsyncSession):
   
   if body.street is not None:
     original_address.street = body.street
-
   if body.city is not None:
     original_address.city = body.city
-
   if body.country is not None:
     original_address.country = body.country
-
   if body.postal_code is not None:
     original_address.postal_code = body.postal_code
 
@@ -140,3 +133,18 @@ async def patch_address(address_id: int, body: EmployeePatch, db: AsyncSession):
 async def get_all_addresses(id: int, db: AsyncSession):
   employees = await repository.get_all_addresses(id, db)
   return employees
+
+
+async def add_department_to_employee( employee_id: int, department_id: int, db: AsyncSession):
+  employee = await repository.get_employee_with_department(employee_id, db)
+  department = await department_repository.get_department(department_id, db)
+
+  employee.departments.append(department)
+  return await repository.add_department_to_employee(employee, db)
+
+async def delete_department_from_employee(employee_id: id, department_id: int, db: AsyncSession):
+  employee = await repository.get_employee_with_department(employee_id, db)
+  department = await department_repository.get_department(department_id, db)
+  
+  employee.departments.remove(department)
+  return await repository.delete_department_from_employee(employee, db)

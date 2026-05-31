@@ -1,5 +1,4 @@
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
-from sqlalchemy import Nullable
 
 class AddressCreate(BaseModel):
   street: str

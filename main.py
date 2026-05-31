@@ -6,6 +6,7 @@ from database import create_tables
 from middleware import RequestLoggingMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 from employees.router import router as employee_router
+from departments.router import router as department_router
 import logging
 
 @asynccontextmanager
@@ -37,6 +38,7 @@ logging.basicConfig(
 )
 
 app.include_router(employee_router)
+app.include_router(department_router)
 
 @app.get("/health", tags=["Health Check"])
 def health():
