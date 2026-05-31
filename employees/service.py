@@ -1,8 +1,10 @@
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import employees.repository as repository
 import departments.repository as department_repository
 from employees.schema import AddressCreate, AddressPatch, EmployeeCreate, EmployeePatch
+from exceptions import ConflictException
 from exceptions.handler import NotFoundException
 from models import address
 from models.address import Address
@@ -10,7 +12,7 @@ from models.employee import Employee
 from auth.utils import hash_password
 
 
-async def create_employee( body: EmployeeCreate, db: AsyncSession) -> Employee:
+async def create_employee(body: EmployeeCreate, db: AsyncSession) -> Employee:
   employee: Employee = Employee()
 
   employee.name = body.name.strip()
@@ -27,8 +29,11 @@ async def create_employee( body: EmployeeCreate, db: AsyncSession) -> Employee:
 
     employee.addresses.append(address)
   
-  employee = await repository.create_employee(employee, db)
-  return employee
+  try:
+    employee = await repository.create_employee(employee, db)
+    return employee
+  except IntegrityError as e:
+    raise ConflictException(detail=f"{body.email} already in use")
 
 async def get_all_employees(db: AsyncSession) -> list[Employee]:
   employees = await repository.get_all_employees(db)
@@ -65,8 +70,11 @@ async def patch_employee(employee_id: int, body: EmployeePatch, db: AsyncSession
   if body.age is not None:
     original_employee.age = body.age
 
-  patched_employee = await repository.patch_employee(db, original_employee)
-  return patched_employee
+  try:
+    patched_employee = await repository.patch_employee(db, original_employee)
+    return patched_employee
+  except IntegrityError as e:
+    raise ConflictException(detail=f"{body.email} already in use")
   
 
 async def create_address(employee_id: int, body: AddressCreate, db: AsyncSession) -> Address:

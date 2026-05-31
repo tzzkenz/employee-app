@@ -17,7 +17,7 @@ async def get_all_employees(db: AsyncSession = Depends(get_db), current_user: To
   return await service.get_all_employees(db)
 
 @router.get("/{employee_id}", response_model=EmployeeResponse)
-async def get_employee(employee_id: int, db: AsyncSession = Depends(get_db), current_user: TokenPayload = Depends(get_current_user)):
+async def get_employee(employee_id: int, db: AsyncSession = Depends(get_db)):
   return await service.get_employee(employee_id, db)
 
 @router.delete("/{employee_id}", response_model=EmployeeResponse)
