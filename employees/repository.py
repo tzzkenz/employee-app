@@ -51,6 +51,11 @@ async def get_address(address_id: int, db: AsyncSession) -> Address | None:
   address = await db.scalars(statement)
   return address.one_or_none()
 
+async def get_address_with_employee(employee_id: int, address_id: int, db: AsyncSession) -> Address | None:
+  statement = select(Address).where(Address.id == address_id, Address.deleted_at.is_(None), Address.employee_id == employee_id)
+  address = await db.scalars(statement)
+  return address.one_or_none()
+
 async def delete_address(deleted_address: Address, db: AsyncSession) -> Address:
   deleted_address.deleted_at = datetime.now(UTC)
   db.add(deleted_address)

@@ -15,4 +15,3 @@ class Address(Entity):
   postal_code: Mapped[str] = mapped_column(String(100), nullable=False)
   employee_id: Mapped[int] = mapped_column(Integer, ForeignKey("employees.id", ondelete="CASCADE"), nullable=False, index=True)
   employee: Mapped["Employee"] = relationship("Employee", back_populates="addresses")
-

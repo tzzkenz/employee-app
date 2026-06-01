@@ -9,7 +9,7 @@ from auth.schema import TokenPayload
 router = APIRouter(prefix="/employee", tags=["Employee"])
 
 @router.post("", response_model=EmployeeResponse)
-async def create_employee(body: EmployeeCreate, db: AsyncSession = Depends(get_db), current_user: TokenPayload = Depends(get_current_user)):
+async def create_employee(body: EmployeeCreate, db: AsyncSession = Depends(get_db)):
   return await service.create_employee(body, db)
 
 @router.get("", response_model=list[EmployeeResponse])
@@ -40,9 +40,9 @@ async def get_address(address_id: int, db: AsyncSession = Depends(get_db), curre
 async def get_all_addresses(employee_id: int,  db: AsyncSession = Depends(get_db), current_user: TokenPayload = Depends(get_current_user)):
   return await service.get_all_addresses(employee_id, db)
 
-@router.delete("/address/{address_id}", response_model=AddressResponse)
-async def delete_address(address_id: int, db: AsyncSession = Depends(get_db), current_user: TokenPayload = Depends(get_current_user)):
-  return await service.delete_address(address_id, db)
+@router.delete("{employee_id}/address/{address_id}", response_model=AddressResponse)
+async def delete_address(employee_id: int, address_id: int, db: AsyncSession = Depends(get_db)):
+  return await service.delete_address(employee_id, address_id, db)
 
 @router.patch("/address/{address_id}", response_model=AddressResponse)
 async def patch_address(address_id: int, body: AddressPatch, db: AsyncSession = Depends(get_db), current_user: TokenPayload = Depends(get_current_user)):

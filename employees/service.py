@@ -7,6 +7,7 @@ from employees.schema import AddressCreate, AddressPatch, EmployeeCreate, Employ
 from exceptions import ConflictException
 from exceptions.handler import NotFoundException
 from models import address
+from models import employee
 from models.address import Address
 from models.employee import Employee
 from auth.utils import hash_password
@@ -99,8 +100,8 @@ async def get_address(address_id: int, db: AsyncSession) -> Address:
   
   return address
 
-async def delete_address(address_id: int, db: AsyncSession) -> Address:
-  address: Address = await repository.get_address(address_id, db)
+async def delete_address(employee_id: int, address_id: int, db: AsyncSession) -> Address:
+  address: Address = await repository.get_address_with_employee(employee_id, address_id, db)
 
   if address is None or address.deleted_at is not None:
     raise NotFoundException(detail="The given address was not found in the DB")
