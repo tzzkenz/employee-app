@@ -20,7 +20,6 @@ app = FastAPI(
   title="Employee CRUD API",
   description="Documentation for CRUD API of a simple employee app",
   version="1.0.0",
-  lifespan=lifespan
 )
 
 app.add_middleware(RequestLoggingMiddleware)
