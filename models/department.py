@@ -10,10 +10,12 @@ employee_departments = Table(
     Column("department_id", ForeignKey("departments.id"), primary_key=True),
 )
 
-class Department(Entity):
 
+class Department(Entity):
     __tablename__ = "departments"
 
     name: Mapped[str] = mapped_column(String(50), nullable=False)
 
-    employees: Mapped[list["Employee"]] = relationship("Employee", back_populates="departments", secondary="employee_departments")
+    employees: Mapped[list["Employee"]] = relationship(
+        "Employee", back_populates="departments", secondary="employee_departments"
+    )
