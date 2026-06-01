@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 async def login(form: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)):
   token = await service.login(form, db)
   logger.info(f"user {form.username} logged in successfully")
-  return token
+  return token 
 
 @router.post("/refresh", response_model=TokenResponse)
 def refresh(body: RefreshRequest):
