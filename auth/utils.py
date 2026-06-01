@@ -4,6 +4,7 @@ import bcrypt
 from jose import JWTError, jwt
 
 from config import settings
+from exceptions import UnauthorizedException
 
 
 def hash_password(password: str) -> str:
@@ -30,3 +31,4 @@ def create_refresh_token(payload):
   to_encode["exp"] = expire
   to_encode["type"] = "refresh"
   return jwt.encode(to_encode, settings.jwt_secret, settings.jwt_algorithm)
+

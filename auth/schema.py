@@ -1,5 +1,7 @@
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
+from models.employee import EmployeeRole
+
 
 
 
@@ -8,6 +10,7 @@ class LoginRequest(BaseModel):
 
   email: EmailStr
   password: str
+  role: EmployeeRole
 
 class TokenResponse(BaseModel):
   model_config = ConfigDict(
@@ -22,6 +25,7 @@ class TokenResponse(BaseModel):
 class TokenPayload(BaseModel):
   id: int
   email: EmailStr
+  role: str
 
 class RefreshRequest(BaseModel):
   refresh_token: str

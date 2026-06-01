@@ -18,6 +18,7 @@ async def create_employee(body: EmployeeCreate, db: AsyncSession) -> Employee:
   employee.age = body.age
   employee.email = body.email.strip()
   employee.password_hash = hash_password(body.password)
+  employee.role = body.role
 
   if body.address:
     address = Address()

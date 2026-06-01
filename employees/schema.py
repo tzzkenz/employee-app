@@ -3,6 +3,7 @@ import re
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 
 from exceptions import BadRequestException
+from models.employee import EmployeeRole
 
 class AddressCreate(BaseModel):
   street: str = Field(min_length=3)
@@ -40,7 +41,7 @@ class EmployeeCreate(BaseModel):
   age: int = Field(ge=18, le=65)
   address: AddressCreate | None = Field(default=None, json_schema_extra={"nullable": True})
   password: str = Field(min_length=8)
-
+  role: EmployeeRole
   @field_validator('password')
   @classmethod
   def validate_password(cls, value: str):
@@ -106,5 +107,6 @@ class EmployeeResponse(BaseModel):
   name: str
   email: EmailStr
   age: int
+  role: EmployeeRole
 
   model_config=ConfigDict(from_attributes=True)

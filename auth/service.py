@@ -12,16 +12,16 @@ from employees.repository import get_by_email
 from exceptions.handler import UnauthorizedException
 
 
-async def login(body: LoginRequest, db: AsyncSession):
-  employee = await get_by_email(body.email, db)
+async def login(form: LoginRequest, db: AsyncSession):
+  employee = await get_by_email(form.username, db)
 
   if employee is None:
     raise UnauthorizedException("Invalid email or password")
-  if not verify_password(body.password, employee.password_hash):
+  if not verify_password(form.password, employee.password_hash):
     raise UnauthorizedException("Invalid email or password")
 
-  access_token = create_access_token({"id" : employee.id, "email" : employee.email}) 
-  refresh_token = create_refresh_token({"id" : employee.id, "email" : employee.email}) 
+  access_token = create_access_token({"id" : employee.id, "email" : employee.email, "role": employee.role}) 
+  refresh_token = create_refresh_token({"id" : employee.id, "email" : employee.email, "role": employee.role}) 
 
   return {
     "access_token" : access_token,

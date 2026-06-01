@@ -1,8 +1,14 @@
-from sqlalchemy import Integer, String
+from sqlalchemy import Enum, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
 from models import Entity
 from models.department import employee_departments
+import enum
+from sqlalchemy import Enum
+class EmployeeRole(str, enum.Enum):
+  UI = "UI"
+  UX = "UX"
+  DEVELOPER = "DEVELOPER"
+  HR = "HR"
 
 class Employee(Entity):
   __abstract__ = False
@@ -16,3 +22,8 @@ class Employee(Entity):
 
   departments: Mapped[list["Department"]] = relationship("Department", secondary=employee_departments, back_populates="employees")
   password_hash: Mapped[str] = mapped_column(String(), nullable=False)
+  role: Mapped[EmployeeRole] = mapped_column(
+    Enum(EmployeeRole, name="employeerole", values_callable=lambda enum_cls: [e.value for e in enum_cls]),
+    nullable=False,
+    server_default=EmployeeRole.DEVELOPER.value
+  )
