@@ -14,5 +14,38 @@ dependencies = [
     "alembic>=1.18.4",
     "pydantic[email]>=2.13.4",
     "bcrypt>=5.0.0",
-    "python-jose[cryptography]>=3.5.0"
+    "python-jose[cryptography]>=3.5.0",
+    "greenlet>=3.5.1",
+    "starlette>=1.2.1",
+    "httpx>=0.28.1",
 ]
+
+[dependency-groups]
+dev = [
+    "aiosqlite>=0.22.1",
+    "httpx>=0.28.1",
+    "poethepoet>=0.46.0",
+    "pytest>=9.0.3",
+    "pytest-asyncio>=1.4.0",
+    "pytest-cov>=7.1.0",
+]
+
+[tool.poe.tasks]
+test = "pytest"
+migrate = "alembic upgrade head"
+downgrade = "alembic downgrade -1"
+"test:cov" = "pytest --cov=, --cov-report=term_missing"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+filterwarnings = [
+    "ignore:Using `httpx` with `starlette.testclient` is deprecated",
+]
+
+
+[pytest]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"

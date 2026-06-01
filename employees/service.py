@@ -6,8 +6,6 @@ import departments.repository as department_repository
 from employees.schema import AddressCreate, AddressPatch, EmployeeCreate, EmployeePatch
 from exceptions import ConflictException
 from exceptions.handler import NotFoundException
-from models import address
-from models import employee
 from models.address import Address
 from models.employee import Employee
 from auth.utils import hash_password
@@ -33,7 +31,7 @@ async def create_employee(body: EmployeeCreate, db: AsyncSession) -> Employee:
   try:
     employee = await repository.create_employee(employee, db)
     return employee
-  except IntegrityError as e:
+  except IntegrityError:
     raise ConflictException(detail=f"{body.email} already in use")
 
 async def get_all_employees(db: AsyncSession) -> list[Employee]:

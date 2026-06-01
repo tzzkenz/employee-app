@@ -38,7 +38,7 @@ class EmployeeCreate(BaseModel):
   name: str = Field(min_length=2)
   email: EmailStr
   age: int = Field(ge=18, le=65)
-  address: AddressCreate | None = Field(default=None, Nullable=True)
+  address: AddressCreate | None = Field(default=None, json_schema_extra={"nullable": True})
   password: str = Field(min_length=8)
 
   @field_validator('password')

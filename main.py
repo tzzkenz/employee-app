@@ -39,9 +39,9 @@ logging.basicConfig(
   datefmt="%Y-%m-%d %H:%M:%S",
 )
 
+app.include_router(auth_router)
 app.include_router(employee_router)
 app.include_router(department_router)
-app.include_router(auth_router)
 
 register_exception_handlers(app)
 
