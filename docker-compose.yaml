@@ -40,4 +40,3 @@ services:
     command: ["uv", "run", "uvicorn", "main:app", "--port", "8000", "--host", "0.0.0.0", "--reload"]
 volumes:
   postgres_data:
-
