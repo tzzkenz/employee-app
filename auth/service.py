@@ -42,8 +42,9 @@ def refresh_token_service(refresh_token: str):
 
         email = payload.get("email")
         id = payload.get("id")
+        role = payload.get("role")
 
-        new_access_token = create_access_token({"id": id, "email": email})
+        new_access_token = create_access_token({"id": id, "email": email, "role": role})
 
         return {"access_token": new_access_token, "token_type": "bearer"}
 

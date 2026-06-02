@@ -45,7 +45,7 @@ async def get_all_employees(db: AsyncSession) -> list[Employee]:
 async def get_employee(employee_id: int, db: AsyncSession) -> Employee:
     employee = await repository.get_employee(employee_id, db)
     if employee is None or employee.deleted_at is not None:
-        raise NotFoundException(detail="Employee not found in DB")
+        raise NotFoundException(detail=f"Employee {employee_id} not found in DB")
 
     return employee
 

@@ -1,41 +1,37 @@
-import pytest
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.pool import StaticPool
+import pytest_asyncio
+
+# Same async-flavoured SQLAlchemy imports as the previous slide.
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
 from database import Base
-from employees import service as employee_service
-from employees.schema import EmployeeCreate
 
 
-@pytest.mark.asyncio
-async def test_create_employee_persists_the_record():
-    engine = create_async_engine(
-        "sqlite+aiosqlite:///:memory:",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-        echo=True,
-    )
-
+@pytest_asyncio.fixture
+async def db_session():
+    # ── SETUP — runs before each test that requests `db_session` ──────
+    # Build a fresh in-memory engine. Every test gets its own DB.
+    engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+    # Open an async transactional connection and create every ORM table.
+    # `run_sync` bridges SQLAlchemy's sync DDL onto the async connection.
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    # Build the session factory and immediately open one session for the test.
+    # `expire_on_commit=False` keeps loaded attrs usable after commit().
+    db = async_sessionmaker(engine, expire_on_commit=False)()
 
-    session_factory = async_sessionmaker(bind=engine, class_=AsyncSession)
+    # ── HAND-OFF — pytest pauses the fixture here and runs the test ──
+    try:
+        yield db  # test receives this as the `db_session` arg
 
-    async with session_factory() as db:
-        body = EmployeeCreate(
-            name="Ada",
-            email="ada@example.com",
-            password="secret123",
-        )
-        employee = await db.run_sync(
-            lambda sync_session: employee_service.create(sync_session, body)
-        )
-
-        assert employee.id is not None
-        assert employee.name == "Ada"
-        assert employee.email == "ada@example.com"
-
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-
-    await engine.dispose()
+    finally:
+        # ── TEARDOWN — runs even if the test raised an exception ────────
+        # `try / finally` is the guarantee — without it a failing assert
+        # would skip the cleanup and the next test would inherit junk.
+        # Release the connection back to the engine's pool.
+        await db.close()
+        # Wipe the schema. Belt-and-braces — the engine is being disposed
+        # next anyway, but explicit cleanup is the lesson here.
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.drop_all)
+        # Dispose the engine — closes the underlying connection pool.
+        await engine.dispose()
