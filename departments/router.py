@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
+from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from auth.dependencies import get_current_user
 from auth.schema import TokenPayload
@@ -46,13 +47,14 @@ async def patch_department(
     return await service.patch_department(department_id, body, db)
 
 
-@router.delete("/{department_id}", response_model=DepartmentResponse)
+@router.delete("/{department_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_department(
     department_id: int,
     db: AsyncSession = Depends(get_db),
     current_user: TokenPayload = Depends(get_current_user),
 ):
-    return await service.delete_department(department_id, db)
+    await service.delete_department(department_id, db)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post("/{department_id}/employee/{employee_id}", response_model=EmployeeResponse)
@@ -75,7 +77,7 @@ async def get_all_employees_in_department(
 
 
 @router.delete(
-    "/{department_id}/employee/{employee_id}", response_model=EmployeeResponse
+    "/{department_id}/employee/{employee_id}", status_code=status.HTTP_204_NO_CONTENT
 )
 async def delete_employee_from_department(
     department_id: int,
@@ -83,4 +85,5 @@ async def delete_employee_from_department(
     db: AsyncSession = Depends(get_db),
     current_user: TokenPayload = Depends(get_current_user),
 ):
-    return await service.delete_employee_from_department(department_id, employee_id, db)
+    await service.delete_employee_from_department(department_id, employee_id, db)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
