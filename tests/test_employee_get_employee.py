@@ -49,34 +49,6 @@ async def test_get_by_id_returns_seeded_employee(db_session):
     assert fetched.email == "ada@example.com"
 
 
-async def test_get_by_name_returns_seeded_employee(db_session):
-
-    # Seed a row directly via the ORM. We construct Employee ourselves
-    # (with a real `password_hash`) because service.create currently
-    # drops the password field — bypassing it keeps this test focused.
-    seeded = Employee(
-        name="Ada",
-        email="ada@example.com",
-        age=20,
-        password_hash=hash_password("secret123"),
-    )
-    # `add()` is sync — it just stages the row in the session.
-    db_session.add(seeded)
-    # `commit()` is the IO step. Must be awaited.
-
-    await db_session.commit()
-
-    # `refresh()` re-reads the row so `seeded.id` is populated.
-
-    await db_session.refresh(seeded)
-
-    # Call the function under test — async, so we await.
-
-    fetched = await employee_service.get_employee(seeded.id, db_session)
-
-    assert fetched.name == seeded.id
-
-
 async def test_get_employee_raises_not_found(db_session):
 
     with pytest.raises(NotFoundException) as exc_info:

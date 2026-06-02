@@ -24,7 +24,7 @@ async def get_all_departments(db: AsyncSession):
 async def get_department(department_id: int, db: AsyncSession):
     department = await repository.get_department(department_id, db)
     if department is None:
-        raise NotFoundException("Department not found")
+        raise NotFoundException(f"Department with id: {department_id} not found")
     return department
 
 
@@ -34,7 +34,7 @@ async def patch_department(
     original_department = await repository.get_department(department_id, db)
 
     if original_department is None:
-        raise NotFoundException("Department not found")
+        raise NotFoundException(f"Department with id: {department_id} not found")
 
     if body.name is not None:
         original_department.name = body.name.strip()
@@ -46,7 +46,7 @@ async def delete_department(department_id: int, db: AsyncSession):
     original_department = await repository.get_department(department_id, db)
 
     if original_department is None:
-        raise NotFoundException("Department not found")
+        raise NotFoundException(f"Department with id: {department_id} not found")
 
     original_department.deleted_at = datetime.now(UTC)
     return await repository.delete_department(original_department, db)
@@ -58,12 +58,12 @@ async def add_employee_to_department(
     department = await repository.get_department_with_employees(department_id, db)
 
     if department is None:
-        raise NotFoundException("Department not found")
+        raise NotFoundException(f"Department with id: {department_id} not found")
 
     employee = await employee_repository.get_employee(employee_id, db)
 
     if employee is None:
-        raise NotFoundException("Employee not found")
+        raise NotFoundException(f"Employee with id: {employee_id} not found")
 
     department.employees.append(employee)
     return await repository.add_employee_to_department(department, db)
@@ -79,12 +79,12 @@ async def delete_employee_from_department(
     department = await repository.get_department_with_employees(department_id, db)
 
     if department is None:
-        raise NotFoundException("Department not found")
+        raise NotFoundException(f"Department with id: {department_id} not found")
 
     employee = await employee_repository.get_employee(employee_id, db)
 
     if employee is None:
-        raise NotFoundException("Employee not found")
+        raise NotFoundException(f"Employee with id: {employee_id} not found")
 
     department.employees.remove(employee)
     return await repository.delete_employee_from_department(department, db)

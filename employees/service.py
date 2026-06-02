@@ -54,7 +54,7 @@ async def delete_employee(employee_id: int, db: AsyncSession) -> Employee:
     employee: Employee = await repository.get_employee(employee_id, db)
 
     if employee is None or employee.deleted_at is not None:
-        raise NotFoundException(detail="Employee not found in DB")
+        raise NotFoundException(detail=f"Employee {employee_id} not found in DB")
 
     deleted_employee: Employee = await repository.delete_employee(employee, db)
 
@@ -69,7 +69,7 @@ async def patch_employee(
     original_employee: Employee = await repository.get_employee(employee_id, db)
 
     if original_employee is None or original_employee.deleted_at is not None:
-        raise NotFoundException("Requested employee is not present in the DB")
+        raise NotFoundException(detail=f"Employee {employee_id} not found in DB")
 
     if body.name is not None:
         original_employee.name = body.name.strip()
@@ -91,7 +91,7 @@ async def create_address(
     employee = await repository.get_employee(employee_id, db)
 
     if employee is None or employee.deleted_at is not None:
-        raise NotFoundException("Requested employee is not present in the DB")
+        raise NotFoundException(detail=f"Employee: {employee_id} not found in DB")
 
     address = Address()
     address.street = body.street.strip()
@@ -106,7 +106,9 @@ async def get_address(address_id: int, db: AsyncSession) -> Address:
     address: Address = await repository.get_address(address_id, db)
 
     if address is None or address.deleted_at is not None:
-        raise NotFoundException(detail="The given address was not found in the DB")
+        raise NotFoundException(
+            f"The address with {address_id} was not found in the DB"
+        )
 
     return address
 
@@ -119,7 +121,9 @@ async def delete_address(
     )
 
     if address is None or address.deleted_at is not None:
-        raise NotFoundException(detail="The given address was not found in the DB")
+        raise NotFoundException(
+            f"The address with {address_id} was not found in the DB"
+        )
 
     deleted_address: Address = await repository.delete_address(address, db)
 
@@ -132,7 +136,9 @@ async def patch_address(
     original_address = await repository.get_address(address_id, db)
 
     if original_address is None or original_address.deleted_at is not None:
-        raise NotFoundException(detail="The given address was not found in the DB")
+        raise NotFoundException(
+            f"The address with {address_id} was not found in the DB"
+        )
 
     if body.street is not None:
         original_address.street = body.street.strip()
@@ -159,9 +165,9 @@ async def add_department_to_employee(
     department = await department_repository.get_department(department_id, db)
 
     if employee is None or employee.deleted_at is not None:
-        raise NotFoundException("Employee not found")
+        raise NotFoundException(f"Employee: {employee_id} not found in DB")
     if department is None or department.deleted_at is not None:
-        raise NotFoundException("Department not found")
+        raise NotFoundException(f"Department: {department_id} not found in DB")
 
     employee.departments.append(department)
     return await repository.add_department_to_employee(employee, db)
@@ -174,9 +180,9 @@ async def delete_department_from_employee(
     department = await department_repository.get_department(department_id, db)
 
     if employee is None or employee.deleted_at is not None:
-        raise NotFoundException("Employee not found")
+        raise NotFoundException(f"Employee: {employee_id} not found in DB")
     if department is None or department.deleted_at is not None:
-        raise NotFoundException("Department not found")
+        raise NotFoundException(f"Department: {department_id} not found in DB")
 
     employee.departments.remove(department)
     return await repository.delete_department_from_employee(employee, db)

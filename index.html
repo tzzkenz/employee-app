@@ -1,0 +1,2425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pytest, FastAPI TestClient &amp; Mocking — Freshers Training</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --border: #334155;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --accent: #38bdf8;
+    --green: #4ade80;
+    --red: #f87171;
+    --orange: #fb923c;
+    --purple: #a78bfa;
+    --code-bg: #0d1117;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  /* ── Slide system ────────────────────────────────── */
+  .slide {
+    display: none;
+    min-height: 100vh;
+    padding: 3rem 4rem;
+    animation: fadeIn .3s ease;
+  }
+  .slide.active { display: flex; flex-direction: column; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ── Navigation ──────────────────────────────────── */
+  .nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: .75rem 2rem;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    z-index: 100;
+    font-size: .9rem;
+  }
+  .nav button {
+    background: var(--accent); color: var(--bg);
+    border: none; padding: .5rem 1.5rem; border-radius: .375rem;
+    cursor: pointer; font-weight: 600; font-size: .9rem;
+    transition: opacity .2s;
+  }
+  .nav button:hover { opacity: .85; }
+  .nav button:disabled { opacity: .3; cursor: default; }
+  #progress { color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  /* ── Typography ──────────────────────────────────── */
+  h1 { font-size: 2.5rem; margin-bottom: 1rem; color: var(--accent); }
+  h2 { font-size: 1.8rem; margin-bottom: .75rem; color: var(--accent); }
+  h3 { font-size: 1.3rem; margin-bottom: .5rem; color: var(--green); }
+  p, li { font-size: 1.1rem; margin-bottom: .5rem; }
+  ul, ol { padding-left: 1.5rem; margin-bottom: 1rem; }
+  li { margin-bottom: .4rem; }
+  .subtitle { color: var(--muted); font-size: 1.25rem; margin-bottom: 2rem; }
+  .tag {
+    display: inline-block; padding: .15rem .6rem; border-radius: .25rem;
+    font-size: .8rem; font-weight: 600; margin-right: .5rem;
+  }
+  .tag-blue  { background: #1e3a5f; color: var(--accent); }
+  .tag-green { background: #14532d; color: var(--green); }
+  .tag-red   { background: #7f1d1d; color: var(--red); }
+  .tag-orange { background: #7c2d12; color: var(--orange); }
+
+  /* ── Code blocks ─────────────────────────────────── */
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: .5rem;
+    padding: 1.25rem 1.5rem;
+    overflow-x: auto;
+    font-size: .95rem;
+    line-height: 1.55;
+    margin: .75rem 0 1.25rem;
+  }
+  code {
+    font-family: 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    font-size: .92em;
+  }
+  :not(pre) > code {
+    background: var(--code-bg);
+    padding: .15rem .4rem;
+    border-radius: .25rem;
+    border: 1px solid var(--border);
+  }
+
+  .kw  { color: #c678dd; }
+  .fn  { color: #61afef; }
+  .str { color: #98c379; }
+  .cm  { color: #5c6370; font-style: italic; }
+  .num { color: #d19a66; }
+  .op  { color: #56b6c2; }
+  .dec { color: #e5c07b; }
+  .typ { color: #e06c75; }
+  .hi  { background: rgba(56,189,248,.12); display: block; margin: 0 -1.5rem; padding: 0 1.5rem; }
+
+  /* ── Layout helpers ──────────────────────────────── */
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin: 1rem 0; }
+  .cols-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.25rem; margin: 1rem 0; }
+  .col-label { font-weight: 700; margin-bottom: .5rem; font-size: 1rem; }
+  .box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: .5rem;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .box-red    { border-left: 4px solid var(--red); }
+  .box-green  { border-left: 4px solid var(--green); }
+  .box-blue   { border-left: 4px solid var(--accent); }
+  .box-orange { border-left: 4px solid var(--orange); }
+  .box-purple { border-left: 4px solid var(--purple); }
+
+  .mt1 { margin-top: 1rem; }
+  .mt2 { margin-top: 2rem; }
+  .mb1 { margin-bottom: 1rem; }
+  .gap1 { gap: 1rem; }
+
+  table {
+    width: 100%; border-collapse: collapse; margin: 1rem 0;
+    font-size: 1rem;
+  }
+  th, td { padding: .6rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+  th { color: var(--accent); font-weight: 600; background: var(--surface); }
+
+  .title-slide {
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+  .title-slide h1 { font-size: 3.5rem; margin-bottom: .5rem; }
+  .title-slide .subtitle { font-size: 1.4rem; }
+  .title-slide .author { color: var(--muted); font-size: 1rem; margin-top: 1rem; }
+
+  .section-divider {
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+  .section-divider h1 { font-size: 3rem; }
+  .section-number {
+    font-size: 5rem; font-weight: 800; color: var(--accent); opacity: .3;
+    margin-bottom: .5rem;
+  }
+
+  .hero-slide {
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+  .hero-slide h1 { font-size: 3rem; color: var(--orange); }
+  .hero-slide .lead { font-size: 1.5rem; color: var(--text); margin-top: 1rem; max-width: 60ch; }
+
+  .break-slide {
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  }
+  .break-slide h1 { font-size: 4rem; color: var(--orange); }
+  .break-slide p { font-size: 1.5rem; color: var(--muted); margin-top: 1rem; }
+
+  .tree { font-family: 'Fira Code', 'Cascadia Code', monospace; font-size: .95rem; line-height: 1.7; }
+  .tree .muted { color: var(--muted); }
+
+  .pyramid {
+    display: flex; flex-direction: column; align-items: center;
+    margin: 1rem auto;
+  }
+  .pyramid .layer {
+    padding: .75rem 0; text-align: center; font-weight: 600;
+    border: 1px solid var(--border);
+    border-radius: .25rem;
+    margin-bottom: 4px;
+    color: var(--bg);
+  }
+  .pyramid .layer.top    { width: 30%; background: var(--red); }
+  .pyramid .layer.mid    { width: 60%; background: var(--orange); }
+  .pyramid .layer.bottom { width: 90%; background: var(--green); }
+
+  .big-quote {
+    font-size: 2rem; color: var(--accent);
+    font-weight: 600; line-height: 1.4;
+    max-width: 28ch; text-align: center; margin: 0 auto;
+  }
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     SLIDE 1 — Title
+     ============================================================ -->
+<section class="slide title-slide active" id="s1">
+  <h1>The Importance of Testing</h1>
+  <p class="subtitle">Pytest &middot; FastAPI TestClient &middot; Mocking</p>
+  <p class="author">Freshers Training &mdash; Session 13</p>
+</section>
+
+<!-- ============================================================
+     SECTION 1 — Why we test
+     ============================================================ -->
+<section class="slide section-divider" id="s2">
+  <div class="section-number">01</div>
+  <h1>Why We Test</h1>
+</section>
+
+<!-- ============================================================
+     SLIDE 4 — Y2K Bug
+     ============================================================ -->
+<section class="slide" id="s3">
+  <h1>Historic Lesson: The Y2K Bug</h1>
+
+  <div class="cols-3 mt1">
+    <div class="box box-red">
+      <h3>1. The Issue</h3>
+      <p>Years recorded as <strong>two digits</strong> caused failures on January 1, 2000.</p>
+    </div>
+    <div class="box box-orange">
+      <h3>2. The Risk</h3>
+      <p>Systems misread <strong>2000 as 1900</strong>, leading to calculation errors across banking, aviation, utilities.</p>
+    </div>
+    <div class="box box-green">
+      <h3>3. The Fix</h3>
+      <p>Extensive <strong>testing and updates</strong> prevented widespread disruption.</p>
+    </div>
+  </div>
+
+  <div class="box box-blue mt1">
+    <p><strong>Organisations spent an estimated $200&ndash;$600 billion</strong> on Y2K compliance &mdash; almost all of it on writing and running tests against scenarios nobody had thought to test for thirty years earlier.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 5 — What is testing? feature pile-up
+     ============================================================ -->
+<section class="slide" id="s4">
+  <h1>What is Testing? &mdash; The Pile-Up Problem</h1>
+
+  <div class="cols mt1">
+    <div class="box box-green">
+      <h3>Day 1</h3>
+      <p>Initially everything is small. One route, one model, one dev who remembers every line.</p>
+      <ul>
+        <li><code>POST /employees</code></li>
+        <li>10 lines of business logic</li>
+        <li>"I'll just check it manually"</li>
+      </ul>
+    </div>
+    <div class="box box-red">
+      <h3>Six months later</h3>
+      <p>Auth, roles, departments, addresses, audit log, soft delete, search&hellip;</p>
+      <ul>
+        <li>Every feature touches code paths from every other feature.</li>
+        <li>"Did the email change break login?" &mdash; nobody knows.</li>
+        <li>Manual testing alone now takes longer than the change itself.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="box box-orange mt1">
+    <p><strong>Tests don't slow you down &mdash; they're what lets you keep going at speed when the codebase grows.</strong></p>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 6 — Airbag analogy: don't smash the car
+     ============================================================ -->
+<section class="slide hero-slide" id="s5">
+  <p class="big-quote">&ldquo;Why smash the whole car when you only need to test the airbag?&rdquo;</p>
+  <p class="lead">When building a car, the airbag system is just one critical component that needs to function perfectly on its own &mdash; before the entire vehicle comes together.</p>
+</section>
+
+<!-- ============================================================
+     SLIDE 7 — Testing the airbag in isolation with a mock
+     ============================================================ -->
+<section class="slide" id="s6">
+  <h1>Testing the Airbag in Isolation &mdash; with a Mock</h1>
+
+  <div class="cols mt1">
+    <div class="box box-blue">
+      <h3>Objective</h3>
+      <p>Validate <code>deploy_airbag()</code> on its own &mdash; no full-system startup.</p>
+      <h3 class="mt1">Mock Input</h3>
+      <p>Simulate crash sensor signals by injecting a mocked <code>CrashSensor</code>. No real collisions.</p>
+      <h3 class="mt1">Controlled Setup</h3>
+      <p>Test harness only &mdash; no physical car, no risk. Faster, safer, repeatable.</p>
+    </div>
+    <div class="box box-green">
+      <h3>Verification Focus</h3>
+      <ul>
+        <li>Assert the igniter trigger method is called.</li>
+        <li>Check correct force and timing parameters.</li>
+        <li>Ensure no accidental deployments.</li>
+      </ul>
+      <h3 class="mt1">Why It Matters</h3>
+      <ul>
+        <li>Catches defects at the unit level <em>before</em> integration.</li>
+        <li>Speeds up feedback loops &amp; debugging.</li>
+        <li>Reduces cost &amp; complexity vs. full-system tests.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="box box-orange mt1">
+    <p><strong>Same idea, our codebase:</strong> we'll test <code>auth_service.login()</code> without spinning up a real database, by replacing the repository with a mock &mdash; you'll see exactly this pattern later in the session.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 8 — Why unit testing matters (5 bullets, emoji-style)
+     ============================================================ -->
+<section class="slide" id="s7">
+  <h1>🧪 Why Unit Testing Matters</h1>
+
+  <div class="mt1">
+    <div class="box box-blue">
+      <h3>🐛 Catch bugs early</h3>
+      <p>Detect issues at the smallest level &mdash; before they snowball into bigger problems in integration or production.</p>
+    </div>
+    <div class="box box-green">
+      <h3>⚡ Fast &amp; clear feedback</h3>
+      <p>Get immediate insight into <em>what</em> broke and <em>why</em>, right after a change &mdash; not three days later in QA.</p>
+    </div>
+    <div class="box box-orange">
+      <h3>📚 Living documentation</h3>
+      <p>A test is the smallest possible example of how a function is meant to be used &mdash; great for onboarding and reviews.</p>
+    </div>
+    <div class="box box-purple">
+      <h3>💪 Boosts developer confidence</h3>
+      <p>Refactor boldly and deploy without fear &mdash; tests have your back.</p>
+    </div>
+    <div class="box box-red">
+      <h3>🛡 Protects your code, even when you're not there</h3>
+      <p>When someone else edits your code in the future, tests act as a safety net &mdash; verifying they don't accidentally break your logic.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 9 — Test pyramid
+     ============================================================ -->
+<section class="slide" id="s8">
+  <h1>The Test Pyramid</h1>
+
+  <div class="cols mt1">
+    <div>
+      <div class="pyramid">
+        <div class="layer top">E2E (slow, brittle)</div>
+        <div class="layer mid">Integration</div>
+        <div class="layer bottom">Unit (fast, many)</div>
+      </div>
+    </div>
+    <div>
+      <table>
+        <tr><th>Level</th><th>What it tests</th><th>Speed</th></tr>
+        <tr><td>Unit</td><td>One function in isolation (the airbag alone)</td><td>milliseconds</td></tr>
+        <tr><td>Integration</td><td>Several units talking together (route + service + DB)</td><td>tens of ms</td></tr>
+        <tr><td>E2E</td><td>The whole stack incl. real DB / browser (smashing the car)</td><td>seconds</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="box box-blue mt1">
+    <p><strong>Rule of thumb:</strong> many fast unit tests, fewer integration tests, a handful of E2E tests. Today we'll write unit + integration. The FastAPI <code>TestClient</code> lets us write integration tests that <em>feel</em> like E2E without the cost.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     SECTION 2 — Pytest Basics
+     ============================================================ -->
+<section class="slide section-divider" id="s9">
+  <div class="section-number">02</div>
+  <h1>Pytest Basics</h1>
+</section>
+
+<!-- ============================================================
+     SLIDE 10 — Why we need a testing tool
+     ============================================================ -->
+<section class="slide" id="s10">
+  <h1>Do We Even Need a Testing Tool?</h1>
+  <p>Tests are just code. In theory, you could write a few <code>if</code> checks and call it a day. Let's see what that looks like.</p>
+
+  <div class="cols mt1">
+    <div>
+      <div class="col-label" style="color: var(--red);">Without a tool</div>
+<pre><code><span class="cm"># my_check.py</span>
+<span class="kw">from</span> auth.utils <span class="kw">import</span> hash_password
+
+<span class="kw">if</span> <span class="fn">hash_password</span>(<span class="str">"abc"</span>) == <span class="str">"abc"</span>:
+    <span class="fn">print</span>(<span class="str">"FAIL: hash equals input"</span>)
+<span class="kw">else</span>:
+    <span class="fn">print</span>(<span class="str">"OK"</span>)
+
+<span class="cm"># run: python my_check.py</span></code></pre>
+    </div>
+    <div>
+      <div class="col-label" style="color: var(--green);">What we&rsquo;ll get with a tool</div>
+<pre><code><span class="cm"># tests/test_auth_utils.py</span>
+<span class="kw">def</span> <span class="fn">test_hash_does_not_equal_input</span>():
+    <span class="kw">assert</span> <span class="fn">hash_password</span>(<span class="str">"abc"</span>) != <span class="str">"abc"</span>
+
+<span class="cm"># run: pytest</span></code></pre>
+    </div>
+  </div>
+
+  <div class="box box-orange mt1">
+    <p>The hand-rolled version works for <em>one</em> check. Once you have a hundred, you need answers to: <strong>How do I run only the failing ones? Where do I share setup? How do I see <em>why</em> something failed? How do I run them in CI?</strong> A testing tool answers all of these out of the box, and turns "is my code correct?" from a manual chore into a one-command yes/no.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 11 — Python testing tools — and why pytest
+     ============================================================ -->
+<section class="slide" id="s11">
+  <h1>Python Testing Tools &mdash; and Why Pytest</h1>
+  <p>Python has a few testing libraries. The two that matter most are <code>unittest</code> and <code>pytest</code>.</p>
+
+  <table class="mt1">
+    <tr><th>Tool</th><th>Where it comes from</th><th>What it&rsquo;s good for</th></tr>
+    <tr><td><code>unittest</code></td><td>Built into the Python standard library &mdash; no install.</td><td>Tiny scripts; codebases that already use it.</td></tr>
+    <tr><td><strong>pytest</strong></td><td>Third-party, but the de facto standard.</td><td>Almost every modern Python project. <em>This is what we use.</em></td></tr>
+    <tr><td><code>nose2</code></td><td>Third-party, older.</td><td>Legacy projects only.</td></tr>
+    <tr><td><code>doctest</code></td><td>Built-in. Tests inside docstrings.</td><td>Tiny doc-style examples, not real test suites.</td></tr>
+  </table>
+
+  <div class="cols mt1">
+    <div>
+      <div class="col-label" style="color: var(--red);">Same test in <code>unittest</code></div>
+<pre><code><span class="kw">import</span> unittest
+
+<span class="kw">class</span> <span class="typ">TestMath</span>(unittest.<span class="typ">TestCase</span>):
+    <span class="kw">def</span> <span class="fn">test_add</span>(<span class="kw">self</span>):
+        <span class="kw">self</span>.<span class="fn">assertEqual</span>(<span class="num">1</span> + <span class="num">1</span>, <span class="num">2</span>)</code></pre>
+    </div>
+    <div>
+      <div class="col-label" style="color: var(--green);">Same test in <strong>pytest</strong></div>
+<pre><code><span class="kw">def</span> <span class="fn">test_add</span>():
+    <span class="kw">assert</span> <span class="num">1</span> + <span class="num">1</span> == <span class="num">2</span></code></pre>
+    </div>
+  </div>
+
+  <div class="box box-blue mt1">
+    <p><strong>Why pytest wins for new projects:</strong> no class boilerplate, plain <code>assert</code> with automatic failure messages, reusable setup via fixtures, one decorator to run a test on many inputs, and a huge plugin library (coverage, async, parallel, &hellip;). Same things <code>unittest</code> can do &mdash; with much less code.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 12 — Install + run (pyproject.toml — deps + tasks)
+     ============================================================ -->
+<section class="slide" id="s12">
+  <h1>Install &amp; Run</h1>
+  <p>Pytest is a development-time dependency. It belongs in <code>pyproject.toml</code> &mdash; the single file that describes our project, its dependencies, and its tooling.</p>
+
+<pre><code><span class="cm"># pyproject.toml — what we added for testing</span>
+[<span class="dec">dependency-groups</span>]
+<span class="hi">dev = [</span>
+<span class="hi">    <span class="str">"pytest&gt;=8.0.0"</span>,           <span class="cm"># the test runner</span></span>
+<span class="hi">    <span class="str">"pytest-cov&gt;=5.0.0"</span>,       <span class="cm"># coverage plugin</span></span>
+<span class="hi">    <span class="str">"httpx&gt;=0.27.0"</span>,           <span class="cm"># required by FastAPI's TestClient</span></span>
+<span class="hi">]</span>
+
+[<span class="dec">tool.poe.tasks</span>]               <span class="cm"># short aliases (uv run poe &lt;name&gt;)</span>
+<span class="hi">test       = <span class="str">"pytest"</span></span>
+<span class="hi">"test:cov" = <span class="str">"pytest --cov=. --cov-report=term-missing"</span></span></code></pre>
+
+  <div class="cols mt1">
+    <div class="box box-blue">
+      <h3>Install</h3>
+<pre><code><span class="cm"># installs everything in [dependency-groups].dev</span>
+uv sync --group dev</code></pre>
+    </div>
+    <div class="box box-green">
+      <h3>Run</h3>
+<pre><code>uv run pytest               <span class="cm"># quiet</span>
+uv run pytest -v            <span class="cm"># list each test</span>
+uv run pytest -k <span class="str">"login"</span>    <span class="cm"># keyword filter</span>
+uv run pytest -x            <span class="cm"># stop on first failure</span>
+uv run pytest --lf          <span class="cm"># re-run last failures</span>
+
+uv run poe test             <span class="cm"># Poe alias</span>
+uv run poe test:cov         <span class="cm"># with coverage</span></code></pre>
+    </div>
+  </div>
+
+  <div class="box box-orange mt1">
+    <p><strong>Why <code>[dependency-groups].dev</code> and not <code>[project].dependencies</code>?</strong> Test tools are only needed during development &mdash; not when the API is deployed to production. Keeping them in <code>dev</code> means production installs are smaller and faster.</p>
+  </div>
+
+  <div class="box box-purple mt1">
+    <h3>👉 In Our Employee Management Project</h3>
+    <ul>
+      <li>Open <code>employee-single-crud/pyproject.toml</code> and add the <code>[dependency-groups]</code> block above.</li>
+      <li>From the project root, run: <code>uv sync --group dev</code> to install pytest, pytest-cov, and httpx.</li>
+      <li>Verify the install: <code>uv run pytest --version</code> (you should see pytest 8.x).</li>
+      <li><strong>Try this now:</strong> run <code>uv run pytest</code> &mdash; you&rsquo;ll see "no tests ran" because we haven&rsquo;t created any yet. That&rsquo;s the next step.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 13 — Discovery rules + pytest config in pyproject.toml
+     ============================================================ -->
+<section class="slide" id="s13">
+  <h1>How Pytest Finds Tests &mdash; and How We Tune It</h1>
+  <p>Pytest discovers tests by <strong>convention</strong>: file names, class names, function names. The <code>[tool.pytest.ini_options]</code> table in <code>pyproject.toml</code> is where we adjust those conventions and the runner behaviour.</p>
+
+<pre><code><span class="cm"># pyproject.toml</span>
+[<span class="dec">tool.pytest.ini_options</span>]
+<span class="hi">testpaths      = [<span class="str">"tests"</span>]</span>           <span class="cm"># only walk tests/, not the whole repo</span>
+<span class="hi">python_files   = [<span class="str">"test_*.py"</span>]</span>        <span class="cm"># files pytest treats as test files</span>
+<span class="hi">python_classes = [<span class="str">"Test*"</span>]</span>            <span class="cm"># class names that group tests</span>
+<span class="hi">python_functions = [<span class="str">"test_*"</span>]</span>         <span class="cm"># function names that ARE tests</span></code></pre>
+
+  <div class="cols mt1">
+    <div class="box box-green">
+      <h3>Will run</h3>
+<pre><code><span class="cm"># tests/test_auth_utils.py</span>
+<span class="kw">def</span> <span class="fn">test_hash_password</span>():
+    ...</code></pre>
+    </div>
+    <div class="box box-red">
+      <h3>Won't run</h3>
+<pre><code><span class="cm"># tests/auth_helpers.py</span>
+<span class="kw">def</span> <span class="fn">check_hash</span>():
+    ...
+<span class="cm"># wrong file prefix AND wrong fn name</span></code></pre>
+    </div>
+  </div>
+
+  <div class="box box-blue mt1">
+    <p><strong>Why each line earns its place:</strong> <code>testpaths</code> stops pytest from accidentally collecting Alembic versions or example scripts. <code>python_files/classes/functions</code> are the discovery patterns &mdash; we keep the defaults but list them explicitly so the convention is visible.</p>
+  </div>
+
+  <div class="box box-purple mt1">
+    <h3>👉 In Our Employee Management Project</h3>
+    <ul>
+      <li>Create a folder at the project root: <code>employee-single-crud/tests/</code></li>
+      <li>Add an empty file inside: <code>tests/__init__.py</code></li>
+      <li>Create your first test file: <code>tests/test_smoke.py</code> with one line: <code>def test_one_plus_one(): assert 1 + 1 == 2</code></li>
+      <li>Add the <code>[tool.pytest.ini_options]</code> block above to <code>pyproject.toml</code>.</li>
+      <li><strong>Try this now:</strong> run <code>uv run pytest -v</code>. You should see <code>test_smoke.py::test_one_plus_one PASSED</code>. That confirms discovery is wired up.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 15 — Plain assert + rewrites
+     ============================================================ -->
+<section class="slide" id="s14">
+  <h1>Just Use <code>assert</code></h1>
+  <p>Pytest <em>rewrites</em> the bytecode of your <code>assert</code> statements so failure messages tell you exactly what was different.</p>
+
+<pre><code><span class="kw">def</span> <span class="fn">test_payload_round_trip</span>():
+    expected = {<span class="str">"id"</span>: <span class="num">1</span>, <span class="str">"role"</span>: <span class="str">"HR"</span>}
+    actual   = {<span class="str">"id"</span>: <span class="num">1</span>, <span class="str">"role"</span>: <span class="str">"DEV"</span>}
+    <span class="kw">assert</span> actual == expected</code></pre>
+
+<pre><code><span class="cm"># pytest output:</span>
+<span class="typ">AssertionError</span>: assert {<span class="str">'id'</span>: <span class="num">1</span>, <span class="str">'role'</span>: <span class="str">'DEV'</span>} == {<span class="str">'id'</span>: <span class="num">1</span>, <span class="str">'role'</span>: <span class="str">'HR'</span>}
+  Differing items:
+  {<span class="str">'role'</span>: <span class="str">'DEV'</span>} != {<span class="str">'role'</span>: <span class="str">'HR'</span>}</code></pre>
+
+  <div class="box box-blue mt1">
+    <p><strong>No <code>assertEqual</code>, <code>assertIn</code>, <code>assertGreater</code>&hellip;</strong> One assertion keyword. Pytest figures out the message.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 14a — Trying assert on real code (verify_password)
+     ============================================================ -->
+<section class="slide" id="s14a">
+  <h1>Trying <code>assert</code> on a Real Function</h1>
+  <p>Let&rsquo;s use <code>assert</code> against a real function from our project &mdash; <code>verify_password</code> in <code>auth/utils.py</code>. Given a plain password and its hash, it returns <code>True</code> or <code>False</code>.</p>
+
+<pre><code><span class="cm"># employee-single-crud/auth/utils.py</span>
+<span class="kw">def</span> <span class="fn">verify_password</span>(plain: <span class="typ">str</span>, hashed: <span class="typ">str</span>) -> <span class="typ">bool</span>:
+    <span class="kw">return</span> bcrypt.<span class="fn">checkpw</span>(plain.<span class="fn">encode</span>(), hashed.<span class="fn">encode</span>())</code></pre>
+
+  <h3 class="mt1">Two tests &mdash; both just <code>assert</code></h3>
+<pre><code><span class="cm"># tests/test_auth_utils.py</span>
+<span class="kw">from</span> auth.utils <span class="kw">import</span> hash_password, verify_password
+
+
+<span class="kw">def</span> <span class="fn">test_verify_password_accepts_correct_password</span>():
+    hashed = <span class="fn">hash_password</span>(<span class="str">"secret123"</span>)
+    <span class="kw">assert</span> <span class="fn">verify_password</span>(<span class="str">"secret123"</span>, hashed) <span class="kw">is</span> <span class="num">True</span>
+
+
+<span class="kw">def</span> <span class="fn">test_verify_password_rejects_wrong_password</span>():
+    hashed = <span class="fn">hash_password</span>(<span class="str">"secret123"</span>)
+    <span class="kw">assert</span> <span class="fn">verify_password</span>(<span class="str">"wrong-pass"</span>, hashed) <span class="kw">is</span> <span class="num">False</span></code></pre>
+
+  <div class="box box-purple mt1">
+    <h3>👉 In Our Employee Management Project</h3>
+    <ul>
+      <li>Create <code>tests/test_auth_utils.py</code>.</li>
+      <li>Paste the two tests above.</li>
+      <li><strong>Try this now:</strong> run <code>uv run pytest tests/test_auth_utils.py -v</code>. Both should pass.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 14b — Hands-on: write a similar test
+     ============================================================ -->
+<section class="slide" id="s14b">
+  <h1>👐 Your Turn &mdash; Write Another <code>verify_password</code> Test</h1>
+
+  <div class="cols mt1">
+    <div class="box box-green">
+      <h3>The task (5 minutes)</h3>
+      <p>Add a <strong>third</strong> test to <code>tests/test_auth_utils.py</code>. Confirm that <code>verify_password</code> rejects an <em>empty</em> string when the original password was non-empty.</p>
+<pre><code><span class="kw">def</span> <span class="fn">test_verify_password_rejects_empty_string</span>():
+    <span class="cm"># 1. hash a real password</span>
+    <span class="cm"># 2. call verify_password with "" and the hash</span>
+    <span class="cm"># 3. assert the result is False</span>
+    ...</code></pre>
+    </div>
+    <div class="box box-blue">
+      <h3>Hints</h3>
+      <ul>
+        <li>Start the test like the two earlier ones &mdash; you need a hash to compare against.</li>
+        <li>Call <code>hash_password("secret123")</code> at the top of your test.</li>
+        <li>One <code>assert</code> line should be enough.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="box box-orange mt1">
+    <p>When you&rsquo;re done, run <code>uv run pytest tests/test_auth_utils.py -v</code>. You should see <strong>three</strong> passing tests. Don&rsquo;t close the file &mdash; we&rsquo;ll come back to it on the next slide.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 14c — See the duplication?
+     ============================================================ -->
+<section class="slide" id="s14c">
+  <h1>Notice the Duplication?</h1>
+  <p>Look at the three tests you now have. The <em>first line</em> of each looks the same:</p>
+
+<pre><code><span class="kw">def</span> <span class="fn">test_verify_password_accepts_correct_password</span>():
+<span class="hi">    hashed = <span class="fn">hash_password</span>(<span class="str">"secret123"</span>)</span>
+    <span class="kw">assert</span> <span class="fn">verify_password</span>(<span class="str">"secret123"</span>, hashed) <span class="kw">is</span> <span class="num">True</span>
+
+
+<span class="kw">def</span> <span class="fn">test_verify_password_rejects_wrong_password</span>():
+<span class="hi">    hashed = <span class="fn">hash_password</span>(<span class="str">"secret123"</span>)</span>
+    <span class="kw">assert</span> <span class="fn">verify_password</span>(<span class="str">"wrong-pass"</span>, hashed) <span class="kw">is</span> <span class="num">False</span>
+
+
+<span class="kw">def</span> <span class="fn">test_verify_password_rejects_empty_string</span>():
+<span class="hi">    hashed = <span class="fn">hash_password</span>(<span class="str">"secret123"</span>)</span>
+    <span class="kw">assert</span> <span class="fn">verify_password</span>(<span class="str">""</span>, hashed) <span class="kw">is</span> <span class="num">False</span></code></pre>
+
+  <div class="cols mt1">
+    <div class="box box-red">
+      <h3>Why this hurts</h3>
+      <ul>
+        <li>Three tests today &mdash; <strong>twenty</strong> by next week.</li>
+        <li>If we change the password (say, to <code>"hunter2"</code>), <em>every copy</em> has to change.</li>
+        <li>Miss one copy and a test silently lies about what your code does.</li>
+        <li>The setup line is noise &mdash; it has nothing to do with what each test is actually checking.</li>
+      </ul>
+    </div>
+    <div class="box box-green">
+      <h3>What we want</h3>
+      <ul>
+        <li>Write the setup <strong>once</strong>.</li>
+        <li>Every test that needs it gets it &mdash; no copy-paste.</li>
+        <li>If the setup changes, we change one line.</li>
+        <li>Each test stays focused on the assertion.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="box box-blue mt1">
+    <p>This is exactly what <strong>fixtures</strong> solve. Next slide: meet them.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 17 — Fixtures: the why, how to define, how to access
+     ============================================================ -->
+<section class="slide" id="s17">
+  <h1>Fixtures &mdash; Why, How to Define, How to Access</h1>
+
+  <h3 class="mt1">1. The need &mdash; duplicated setup hurts</h3>
+  <p>You just saw three <code>verify_password</code> tests, each starting with the same <code>hashed = hash_password("secret123")</code> line. That&rsquo;s the pattern fixtures fix: tests that need the same starting state, set up over and over.</p>
+
+<pre><code><span class="kw">def</span> <span class="fn">test_verify_password_accepts_correct_password</span>():
+<span class="hi">    hashed = <span class="fn">hash_password</span>(<span class="str">"secret123"</span>)   <span class="cm"># setup</span></span>
+    <span class="kw">assert</span> <span class="fn">verify_password</span>(<span class="str">"secret123"</span>, hashed) <span class="kw">is</span> <span class="num">True</span>
+
+<span class="kw">def</span> <span class="fn">test_verify_password_rejects_wrong_password</span>():
+<span class="hi">    hashed = <span class="fn">hash_password</span>(<span class="str">"secret123"</span>)   <span class="cm"># same setup, copy-pasted</span></span>
+    <span class="kw">assert</span> <span class="fn">verify_password</span>(<span class="str">"wrong-pass"</span>, hashed) <span class="kw">is</span> <span class="num">False</span></code></pre>
+
+  <p>Three tests today; ten by next week. If the password changes, every copy must change. Forget one and a test silently lies.</p>
+
+  <div class="cols mt1">
+    <div class="box box-blue">
+      <h3>2. How to <strong>define</strong> a fixture</h3>
+      <p>A function with the <code>@pytest.fixture</code> decorator. It <em>returns</em> (or <em>yields</em>) the value tests will share.</p>
+<pre><code><span class="kw">import</span> pytest
+
+<span class="dec">@pytest.fixture</span>
+<span class="kw">def</span> <span class="fn">sample_user</span>():
+    <span class="kw">return</span> {<span class="str">"id"</span>: <span class="num">1</span>,
+            <span class="str">"name"</span>: <span class="str">"Ada"</span>,
+            <span class="str">"role"</span>: <span class="str">"HR"</span>}</code></pre>
+    </div>
+    <div class="box box-green">
+      <h3>3. How to <strong>access</strong> it from a test</h3>
+      <p>List the fixture name as a <em>function parameter</em>. Pytest sees the name, calls the fixture, injects the result.</p>
+<pre><code><span class="kw">def</span> <span class="fn">test_name</span>(<span class="hi">sample_user</span>):
+    <span class="kw">assert</span> sample_user[<span class="str">"name"</span>] == <span class="str">"Ada"</span>
+
+<span class="kw">def</span> <span class="fn">test_role</span>(<span class="hi">sample_user</span>):
+    <span class="kw">assert</span> sample_user[<span class="str">"role"</span>] == <span class="str">"HR"</span></code></pre>
+    </div>
+  </div>
+
+  <div class="box box-orange mt1">
+    <p><strong>The deal:</strong> define once with <code>@pytest.fixture</code>, name it as a parameter wherever you want it. No imports, no manual call, no copy-paste. The next slides go deeper &mdash; teardown, scopes, and sharing fixtures across files.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 18 — What is a fixture
+     ============================================================ -->
+<section class="slide" id="s18">
+  <h1>What is a Fixture?</h1>
+  <p>A <strong>fixture</strong> is a reusable piece of setup. You declare it once, then any test that <em>names it as a parameter</em> gets the result.</p>
+
+<pre><code><span class="kw">import</span> pytest
+
+<span class="dec">@pytest.fixture</span>
+<span class="kw">def</span> <span class="fn">sample_user</span>():
+    <span class="kw">return</span> {<span class="str">"id"</span>: <span class="num">1</span>, <span class="str">"name"</span>: <span class="str">"Ada"</span>, <span class="str">"role"</span>: <span class="str">"HR"</span>}
+
+
+<span class="kw">def</span> <span class="fn">test_user_has_a_name</span>(<span class="hi">sample_user</span>):           <span class="cm"># pytest injects it</span>
+    <span class="kw">assert</span> sample_user[<span class="str">"name"</span>] == <span class="str">"Ada"</span>
+
+
+<span class="kw">def</span> <span class="fn">test_user_role_is_hr</span>(<span class="hi">sample_user</span>):
+    <span class="kw">assert</span> sample_user[<span class="str">"role"</span>] == <span class="str">"HR"</span></code></pre>
+
+  <div class="box box-blue mt1">
+    <p><strong>Mental model:</strong> a fixture is a function that <em>returns or yields</em> something. Tests ask for it by parameter name &mdash; pytest figures out the dependency graph and runs fixtures in the right order.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 18a — Refactor verify_password tests with a fixture
+     ============================================================ -->
+<section class="slide" id="s18a">
+  <h1>Back to Our Tests &mdash; Now with a Fixture</h1>
+  <p>Remember the three <code>verify_password</code> tests with the duplicated <code>hash_password("secret123")</code> line? Let&rsquo;s fix that.</p>
+
+  <div class="cols mt1">
+    <div>
+      <div class="col-label" style="color: var(--red);">Before &mdash; setup copy-pasted</div>
+<pre><code><span class="kw">def</span> <span class="fn">test_correct_password</span>():
+<span class="hi">    hashed = <span class="fn">hash_password</span>(<span class="str">"secret123"</span>)</span>
+    <span class="kw">assert</span> <span class="fn">verify_password</span>(<span class="str">"secret123"</span>, hashed) <span class="kw">is</span> <span class="num">True</span>
+
+<span class="kw">def</span> <span class="fn">test_wrong_password</span>():
+<span class="hi">    hashed = <span class="fn">hash_password</span>(<span class="str">"secret123"</span>)</span>
+    <span class="kw">assert</span> <span class="fn">verify_password</span>(<span class="str">"wrong-pass"</span>, hashed) <span class="kw">is</span> <span class="num">False</span>
+
+<span class="kw">def</span> <span class="fn">test_empty_password</span>():
+<span class="hi">    hashed = <span class="fn">hash_password</span>(<span class="str">"secret123"</span>)</span>
+    <span class="kw">assert</span> <span class="fn">verify_password</span>(<span class="str">""</span>, hashed) <span class="kw">is</span> <span class="num">False</span></code></pre>
+    </div>
+    <div>
+      <div class="col-label" style="color: var(--green);">After &mdash; one fixture, injected three times</div>
+<pre><code><span class="kw">import</span> pytest
+<span class="kw">from</span> auth.utils <span class="kw">import</span> hash_password, verify_password
+
+<span class="dec">@pytest.fixture</span>
+<span class="kw">def</span> <span class="fn">hashed_password</span>():
+<span class="hi">    <span class="kw">return</span> <span class="fn">hash_password</span>(<span class="str">"secret123"</span>)</span>
+
+
+<span class="kw">def</span> <span class="fn">test_correct_password</span>(hashed_password):
+    <span class="kw">assert</span> <span class="fn">verify_password</span>(<span class="str">"secret123"</span>, hashed_password) <span class="kw">is</span> <span class="num">True</span>
+
+<span class="kw">def</span> <span class="fn">test_wrong_password</span>(hashed_password):
+    <span class="kw">assert</span> <span class="fn">verify_password</span>(<span class="str">"wrong-pass"</span>, hashed_password) <span class="kw">is</span> <span class="num">False</span>
+
+<span class="kw">def</span> <span class="fn">test_empty_password</span>(hashed_password):
+    <span class="kw">assert</span> <span class="fn">verify_password</span>(<span class="str">""</span>, hashed_password) <span class="kw">is</span> <span class="num">False</span></code></pre>
+    </div>
+  </div>
+
+  <div class="box box-blue mt1">
+    <p><strong>What changed:</strong> the hash is built <em>once</em> in the fixture. Each test names <code>hashed_password</code> as a parameter, and pytest injects the result. Want to change the password? Edit one line. Each test now reads as just the assertion &mdash; setup is gone from the body.</p>
+  </div>
+
+  <div class="box box-purple mt1">
+    <h3>👉 In Our Employee Management Project</h3>
+    <ul>
+      <li>Open <code>tests/test_auth_utils.py</code> &mdash; the file from the earlier hands-on.</li>
+      <li>Add the <code>hashed_password</code> fixture at the top.</li>
+      <li>Update each test to take <code>hashed_password</code> as a parameter and drop the duplicated setup line.</li>
+      <li><strong>Try this now:</strong> run <code>uv run pytest tests/test_auth_utils.py -v</code> &mdash; all three tests should still pass.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 18b — yield concept teaser
+     ============================================================ -->
+<section class="slide" id="s18b">
+  <h1>Fixtures Can Also Clean Up &mdash; Meet <code>yield</code></h1>
+  <p>So far our fixture just <code>return</code>ed a value. That&rsquo;s fine when the value is a plain Python object &mdash; garbage collection cleans up for free. But some fixtures hold something the OS needs to release: a database session, an open file, a network connection.</p>
+
+  <div class="cols mt1">
+    <div class="box box-blue">
+      <h3><code>return</code> &mdash; for plain values</h3>
+<pre><code><span class="dec">@pytest.fixture</span>
+<span class="kw">def</span> <span class="fn">hashed_password</span>():
+<span class="hi">    <span class="kw">return</span> <span class="fn">hash_password</span>(<span class="str">"secret123"</span>)</span></code></pre>
+      <p>A string &mdash; nothing to clean up. <code>return</code> is enough.</p>
+    </div>
+    <div class="box box-green">
+      <h3><code>yield</code> &mdash; for resources that need cleanup</h3>
+<pre><code><span class="dec">@pytest.fixture</span>
+<span class="kw">def</span> <span class="fn">something_with_cleanup</span>():
+    <span class="cm"># SETUP — runs before the test</span>
+<span class="hi">    <span class="kw">yield</span> resource</span>             <span class="cm"># &larr; test runs here</span>
+    <span class="cm"># TEARDOWN — runs after the test</span></code></pre>
+      <p>Hand the value over, then come back to clean up.</p>
+    </div>
+  </div>
+
+  <div class="box box-orange mt1">
+    <p><strong>Big idea:</strong> <code>yield</code> pauses the fixture in the middle. Pytest runs the test, then resumes the fixture <em>after</em> <code>yield</code> &mdash; <strong>even if the test fails or errors</strong>. That&rsquo;s how we get guaranteed cleanup.</p>
+  </div>
+
+  <div class="box box-blue mt1">
+    <p><strong>When do we actually need this?</strong> The clearest example is testing code that touches a real database. Next slide &mdash; let&rsquo;s see why.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 18c — Why in-memory SQLite for testing
+     ============================================================ -->
+<section class="slide" id="s18c">
+  <h1>Why In-Memory SQLite for Tests?</h1>
+  <p>Most of our service code takes a <code>db: Session</code> &mdash; it needs a real database to do anything useful. But spinning up Postgres for every test is heavy. There&rsquo;s a much lighter option built right into Python: <strong>SQLite</strong>, in memory.</p>
+
+  <div class="cols mt1">
+    <div class="box box-red">
+      <h3>Using real Postgres for tests</h3>
+      <ul>
+        <li><strong>Slow</strong> &mdash; connect, run migrations, clean up between tests.</li>
+        <li><strong>Shared</strong> &mdash; one bad test corrupts your dev DB.</li>
+        <li><strong>External</strong> &mdash; CI needs the Postgres server running too.</li>
+        <li><strong>Hard to reset</strong> &mdash; tearing down state is fiddly.</li>
+      </ul>
+    </div>
+    <div class="box box-green">
+      <h3>Using in-memory SQLite</h3>
+      <ul>
+        <li><strong>Fast</strong> &mdash; lives in RAM, no disk, no network.</li>
+        <li><strong>Throwaway</strong> &mdash; gone the moment the process ends.</li>
+        <li><strong>Zero setup</strong> &mdash; bundled with Python.</li>
+        <li><strong>Speaks SQL</strong> &mdash; SQLAlchemy talks to it the same way it talks to Postgres.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 class="mt1">The lines that build an async SQLite test database</h3>
+<pre><code><span class="cm"># `create_async_engine` builds an engine backed by an async driver.</span>
+<span class="cm"># `async_sessionmaker` is the async-aware factory for ORM sessions.</span>
+<span class="cm"># `AsyncSession` is the type the factory will hand back to us.</span>
+<span class="kw">from</span> sqlalchemy.ext.asyncio <span class="kw">import</span> <span class="fn">create_async_engine</span>, <span class="typ">AsyncSession</span>, <span class="fn">async_sessionmaker</span>
+
+<span class="cm"># `Base` is our app&rsquo;s declarative base — it tracks every ORM-mapped class</span>
+<span class="cm"># (Employee, Department, Address, …) on `Base.metadata`. That metadata is</span>
+<span class="cm"># the &quot;blueprint&quot; we&rsquo;ll ask SQLAlchemy to materialise as real tables below.</span>
+<span class="kw">from</span> database <span class="kw">import</span> Base
+
+
+<span class="cm"># ── 1. Create the async engine ────────────────────────────────────────</span>
+<span class="cm"># URL format: dialect+driver://...    →  sqlite + aiosqlite (async driver).</span>
+<span class="cm">#   - &quot;sqlite://&quot; alone would pick the default sync driver — wrong here.</span>
+<span class="cm">#   - &quot;:memory:&quot; means &quot;don&rsquo;t create a file; live entirely in RAM.&quot;</span>
+<span class="cm"># The engine is a long-lived connection pool, not a connection itself.</span>
+<span class="hi">engine = <span class="fn">create_async_engine</span>(<span class="str">"sqlite+aiosqlite:///:memory:"</span>)</span>
+
+
+<span class="cm"># ── 2. Create every table on the in-memory database ───────────────────</span>
+<span class="cm"># `engine.begin()` opens an async transactional connection. We need a</span>
+<span class="cm"># connection (not just the engine) because `create_all` issues real DDL.</span>
+<span class="cm">#</span>
+<span class="cm"># Why `run_sync`? `Base.metadata.create_all` is a *sync* SQLAlchemy API —</span>
+<span class="cm"># there is no `create_all_async`. `run_sync` lets us call sync SQLAlchemy</span>
+<span class="cm"># code from inside an async connection by hopping onto a worker (via</span>
+<span class="cm"># greenlet) and hopping back when it&rsquo;s done. The `await` is on the hop,</span>
+<span class="cm"># not on `create_all` itself.</span>
+<span class="kw">async</span> <span class="kw">with</span> engine.<span class="fn">begin</span>() <span class="kw">as</span> conn:
+<span class="hi">    <span class="kw">await</span> conn.<span class="fn">run_sync</span>(Base.metadata.create_all)</span>
+
+
+<span class="cm"># ── 3. Build the async session factory ────────────────────────────────</span>
+<span class="cm"># A factory, not a session — calling it returns a fresh `AsyncSession`.</span>
+<span class="cm">#</span>
+<span class="cm"># `expire_on_commit=False` keeps loaded attributes usable after `commit()`.</span>
+<span class="cm"># Default is True, which marks every loaded attribute as &quot;stale&quot; on commit</span>
+<span class="cm"># and reloads it on next access. In async tests that becomes an extra</span>
+<span class="cm"># round-trip we have to remember to `await`, and breaks code that reads</span>
+<span class="cm"># a refreshed object after committing. Disabling it is the standard</span>
+<span class="cm"># recommendation for async SQLAlchemy.</span>
+<span class="hi"><span class="typ">TestingSession</span> = <span class="fn">async_sessionmaker</span>(engine, expire_on_commit=<span class="num">False</span>)</span>
+
+
+<span class="cm"># ── 4. Open a fresh AsyncSession for the test ─────────────────────────</span>
+<span class="cm"># This is the object you&rsquo;ll call `db.add(...)`, `await db.commit()`,</span>
+<span class="cm"># `await db.refresh(...)`, `await db.scalars(stmt)` on — same ORM API as</span>
+<span class="cm"># the sync version, just with `await` in front of every IO operation.</span>
+<span class="hi">db = <span class="typ">TestingSession</span>()</span></code></pre>
+
+  <div class="cols mt1">
+    <div class="box box-blue">
+      <h3>What changed vs. sync SQLAlchemy</h3>
+      <ul>
+        <li><code>create_engine</code> &rarr; <code>create_async_engine</code></li>
+        <li>URL <code>sqlite://</code> &rarr; <code>sqlite+aiosqlite://</code> (aiosqlite is the async driver)</li>
+        <li><code>sessionmaker</code> &rarr; <code>async_sessionmaker</code></li>
+        <li>DDL needs <code>await conn.run_sync(...)</code> &mdash; <code>create_all</code> itself is sync, but the connection is async</li>
+      </ul>
+    </div>
+    <div class="box box-orange">
+      <h3>Caveats</h3>
+      <ul>
+        <li>SQLite isn&rsquo;t identical to Postgres &mdash; some types and constraints differ.</li>
+        <li>You also need <code>greenlet</code> installed: SQLAlchemy&rsquo;s async layer uses it to bridge sync ORM internals onto the event loop.</li>
+        <li>For Postgres-only features (native enums, JSONB) or migrations, reach for a Postgres test container.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 18d — SQLite without fixtures (manual setup/teardown)
+     ============================================================ -->
+<section class="slide" id="s18d">
+  <h1>Using SQLite Manually &mdash; No Fixtures Yet (async)</h1>
+  <p>Let&rsquo;s exercise <code>employee_service</code> with a real async SQLite session. To keep the pain visible, we&rsquo;ll write it <em>without</em> a fixture first.</p>
+
+<pre><code><span class="cm"># tests/test_employee_service.py</span>
+
+<span class="cm"># Async-flavoured SQLAlchemy: async engine factory + async session factory.</span>
+<span class="kw">from</span> sqlalchemy.ext.asyncio <span class="kw">import</span> <span class="fn">create_async_engine</span>, <span class="fn">async_sessionmaker</span>
+
+<span class="cm"># `hash_password` — service.create() drops the password field today, so we</span>
+<span class="cm"># bypass it and seed the row directly with a valid bcrypt hash ourselves.</span>
+<span class="kw">from</span> auth.utils <span class="kw">import</span> hash_password
+<span class="cm"># `Base` carries the metadata for every ORM-mapped class — used by</span>
+<span class="cm"># `create_all` / `drop_all` to build and wipe the schema.</span>
+<span class="kw">from</span> database <span class="kw">import</span> Base
+<span class="cm"># The service under test.</span>
+<span class="kw">from</span> employees <span class="kw">import</span> service <span class="kw">as</span> employee_service
+<span class="cm"># The ORM model we&rsquo;ll instantiate to seed a row.</span>
+<span class="kw">from</span> models.employee <span class="kw">import</span> Employee
+
+
+<span class="cm"># `async def` because the body uses `await`. `pytest-asyncio` (mode=auto in</span>
+<span class="cm"># pyproject.toml) runs this on an event loop for us — no decorator needed.</span>
+<span class="hi"><span class="kw">async</span> <span class="kw">def</span> <span class="fn">test_get_by_id_returns_seeded_employee</span>():</span>
+<span class="hi">    <span class="cm"># ── SETUP ─────────────────────────────────────────────</span></span>
+<span class="hi">    <span class="cm"># 1. Build an async engine pointed at an in-memory SQLite database.</span></span>
+<span class="hi">    <span class="cm">#    The `+aiosqlite` suffix selects the async driver — without it,</span></span>
+<span class="hi">    <span class="cm">#    SQLAlchemy would pick the default sync driver and refuse to mix.</span></span>
+<span class="hi">    engine = <span class="fn">create_async_engine</span>(<span class="str">"sqlite+aiosqlite:///:memory:"</span>)</span>
+
+<span class="hi">    <span class="cm"># 2. Materialise every ORM table on the empty in-memory DB.</span></span>
+<span class="hi">    <span class="cm">#    `engine.begin()` is an async context manager that opens a</span></span>
+<span class="hi">    <span class="cm">#    transactional connection. `create_all` is a *sync* SQLAlchemy</span></span>
+<span class="hi">    <span class="cm">#    call, so we hand it to `conn.run_sync(...)`, which runs it on a</span></span>
+<span class="hi">    <span class="cm">#    worker thread (via greenlet) and awaits the result.</span></span>
+<span class="hi">    <span class="kw">async</span> <span class="kw">with</span> engine.<span class="fn">begin</span>() <span class="kw">as</span> conn:</span>
+<span class="hi">        <span class="kw">await</span> conn.<span class="fn">run_sync</span>(Base.metadata.create_all)</span>
+
+<span class="hi">    <span class="cm"># 3. Build the session factory and immediately open one session.</span></span>
+<span class="hi">    <span class="cm">#    `expire_on_commit=False` keeps loaded attributes usable after</span></span>
+<span class="hi">    <span class="cm">#    `commit()` — the recommended setting for async SQLAlchemy.</span></span>
+<span class="hi">    db = <span class="fn">async_sessionmaker</span>(engine, expire_on_commit=<span class="num">False</span>)()</span>
+
+    <span class="cm"># ── ACT ───────────────────────────────────────────────</span>
+    <span class="cm"># Build an Employee directly (bypassing the service) so we control</span>
+    <span class="cm"># every field — including `password_hash`, which the service drops.</span>
+    seeded = <span class="typ">Employee</span>(name=<span class="str">"Ada"</span>, email=<span class="str">"ada@example.com"</span>,
+                      password_hash=<span class="fn">hash_password</span>(<span class="str">"secret123"</span>))
+    <span class="cm"># `add()` is sync — it just stages the row in the session&rsquo;s identity map.</span>
+    db.<span class="fn">add</span>(seeded)
+<span class="hi">    <span class="cm"># `commit()` is the IO step — flush + COMMIT to SQLite. Must be awaited.</span></span>
+<span class="hi">    <span class="kw">await</span> db.<span class="fn">commit</span>()</span>
+<span class="hi">    <span class="cm"># `refresh()` re-reads the row so `seeded.id` is populated from the DB.</span></span>
+<span class="hi">    <span class="kw">await</span> db.<span class="fn">refresh</span>(seeded)</span>
+
+<span class="hi">    <span class="cm"># Call the function under test — it itself is `async def`, so we await.</span></span>
+<span class="hi">    fetched = <span class="kw">await</span> employee_service.<span class="fn">get_by_id</span>(db, seeded.id)</span>
+
+    <span class="cm"># ── ASSERT ────────────────────────────────────────────</span>
+    <span class="cm"># Same id we seeded — proves the lookup returned the right row.</span>
+    <span class="kw">assert</span> fetched.id == seeded.id
+    <span class="cm"># Email round-trips through SQLAlchemy unchanged.</span>
+    <span class="kw">assert</span> fetched.email == <span class="str">"ada@example.com"</span>
+
+<span class="hi">    <span class="cm"># ── TEARDOWN ──────────────────────────────────────────</span></span>
+<span class="hi">    <span class="cm"># Close the session — releases the connection back to the pool.</span></span>
+<span class="hi">    <span class="kw">await</span> db.<span class="fn">close</span>()</span>
+<span class="hi">    <span class="cm"># Drop every table so the next test starts clean. (We could also let the</span></span>
+<span class="hi">    <span class="cm"># engine fall out of scope, but explicit cleanup is the lesson here.)</span></span>
+<span class="hi">    <span class="kw">async</span> <span class="kw">with</span> engine.<span class="fn">begin</span>() <span class="kw">as</span> conn:</span>
+<span class="hi">        <span class="kw">await</span> conn.<span class="fn">run_sync</span>(Base.metadata.drop_all)</span>
+<span class="hi">    <span class="cm"># Dispose the engine — closes the underlying connection pool.</span></span>
+<span class="hi">    <span class="kw">await</span> engine.<span class="fn">dispose</span>()</span></code></pre>
+
+  <div class="cols mt1">
+    <div class="box box-red">
+      <h3>Two problems with writing it this way</h3>
+      <ul>
+        <li><strong>Duplication</strong> &mdash; every test in this file starts with the same 3 setup lines and ends with the same 2 teardown lines.</li>
+        <li><strong>Leaky teardown</strong> &mdash; if the <code>assert</code> fails (or anything raises mid-test), the lines below never run. The next test inherits a polluted DB.</li>
+      </ul>
+    </div>
+    <div class="box box-blue">
+      <h3>What we need</h3>
+      <ul>
+        <li>Setup written <strong>once</strong>, shared across tests.</li>
+        <li>Teardown that runs <strong>even when the test fails</strong>.</li>
+        <li>The test body itself focused only on <em>act</em> and <em>assert</em>.</li>
+      </ul>
+      <p>This is the exact job <code>yield</code> inside a fixture was designed for. Next slide.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 19 — Setup + Teardown with yield (rewritten)
+     ============================================================ -->
+<section class="slide" id="s19">
+  <h1>Rewriting Our SQLite Test with an Async <code>yield</code> Fixture</h1>
+  <p>Take the manual setup/teardown from the previous slide, lift it into an async fixture, and use <code>yield</code> to split <em>setup</em> from <em>cleanup</em>:</p>
+
+<pre><code><span class="cm"># tests/test_employee_service.py</span>
+
+<span class="cm"># `pytest_asyncio` provides the *async-aware* fixture decorator. Plain</span>
+<span class="cm"># `@pytest.fixture` doesn&rsquo;t know how to drive an `async def` body — you</span>
+<span class="cm"># have to use `@pytest_asyncio.fixture` whenever the fixture itself is</span>
+<span class="cm"># async or yields an async resource.</span>
+<span class="kw">import</span> pytest_asyncio
+<span class="cm"># Same async-flavoured SQLAlchemy imports as the previous slide.</span>
+<span class="kw">from</span> sqlalchemy.ext.asyncio <span class="kw">import</span> <span class="fn">create_async_engine</span>, <span class="fn">async_sessionmaker</span>
+
+<span class="kw">from</span> auth.utils <span class="kw">import</span> hash_password
+<span class="kw">from</span> database <span class="kw">import</span> Base
+<span class="kw">from</span> employees <span class="kw">import</span> service <span class="kw">as</span> employee_service
+<span class="kw">from</span> models.employee <span class="kw">import</span> Employee
+
+
+<span class="cm"># The fixture: a single function that owns the engine, the schema, and</span>
+<span class="cm"># the session — and tears it all back down when the test finishes.</span>
+<span class="dec">@pytest_asyncio.fixture</span>
+<span class="kw">async</span> <span class="kw">def</span> <span class="fn">db_session</span>():
+    <span class="cm"># ── SETUP — runs before each test that requests `db_session` ──────</span>
+    <span class="cm"># Build a fresh in-memory engine. Every test gets its own DB.</span>
+    engine = <span class="fn">create_async_engine</span>(<span class="str">"sqlite+aiosqlite:///:memory:"</span>)
+    <span class="cm"># Open an async transactional connection and create every ORM table.</span>
+    <span class="cm"># `run_sync` bridges SQLAlchemy&rsquo;s sync DDL onto the async connection.</span>
+    <span class="kw">async</span> <span class="kw">with</span> engine.<span class="fn">begin</span>() <span class="kw">as</span> conn:
+        <span class="kw">await</span> conn.<span class="fn">run_sync</span>(Base.metadata.create_all)
+    <span class="cm"># Build the session factory and immediately open one session for the test.</span>
+    <span class="cm"># `expire_on_commit=False` keeps loaded attrs usable after commit().</span>
+    db = <span class="fn">async_sessionmaker</span>(engine, expire_on_commit=<span class="num">False</span>)()
+
+    <span class="cm"># ── HAND-OFF — pytest pauses the fixture here and runs the test ──</span>
+    <span class="kw">try</span>:
+<span class="hi">        <span class="kw">yield</span> db                                       <span class="cm"># test receives this as the `db_session` arg</span></span>
+    <span class="kw">finally</span>:
+        <span class="cm"># ── TEARDOWN — runs even if the test raised an exception ────────</span>
+        <span class="cm"># `try / finally` is the guarantee — without it a failing assert</span>
+        <span class="cm"># would skip the cleanup and the next test would inherit junk.</span>
+        <span class="cm"># Release the connection back to the engine&rsquo;s pool.</span>
+        <span class="kw">await</span> db.<span class="fn">close</span>()
+        <span class="cm"># Wipe the schema. Belt-and-braces — the engine is being disposed</span>
+        <span class="cm"># next anyway, but explicit cleanup is the lesson here.</span>
+        <span class="kw">async</span> <span class="kw">with</span> engine.<span class="fn">begin</span>() <span class="kw">as</span> conn:
+            <span class="kw">await</span> conn.<span class="fn">run_sync</span>(Base.metadata.drop_all)
+        <span class="cm"># Dispose the engine — closes the underlying connection pool.</span>
+        <span class="kw">await</span> engine.<span class="fn">dispose</span>()
+
+
+<span class="cm"># The test is now pure &quot;act + assert&quot; — no engine, no create_all, no</span>
+<span class="cm"># cleanup. Pytest sees the `db_session` parameter, runs the fixture</span>
+<span class="cm"># above, and hands the yielded session in.</span>
+<span class="hi"><span class="kw">async</span> <span class="kw">def</span> <span class="fn">test_get_by_id_returns_seeded_employee</span>(db_session):</span>
+    <span class="cm"># Seed a row directly via the ORM. We construct Employee ourselves</span>
+    <span class="cm"># (with a real `password_hash`) because service.create currently</span>
+    <span class="cm"># drops the password field — bypassing it keeps this test focused.</span>
+    seeded = <span class="typ">Employee</span>(name=<span class="str">"Ada"</span>, email=<span class="str">"ada@example.com"</span>,
+                      password_hash=<span class="fn">hash_password</span>(<span class="str">"secret123"</span>))
+    <span class="cm"># `add()` is sync — it just stages the row in the session.</span>
+    db_session.<span class="fn">add</span>(seeded)
+<span class="hi">    <span class="cm"># `commit()` is the IO step. Must be awaited.</span></span>
+<span class="hi">    <span class="kw">await</span> db_session.<span class="fn">commit</span>()</span>
+<span class="hi">    <span class="cm"># `refresh()` re-reads the row so `seeded.id` is populated.</span></span>
+<span class="hi">    <span class="kw">await</span> db_session.<span class="fn">refresh</span>(seeded)</span>
+
+<span class="hi">    <span class="cm"># Call the function under test — async, so we await.</span></span>
+<span class="hi">    fetched = <span class="kw">await</span> employee_service.<span class="fn">get_by_id</span>(db_session, seeded.id)</span>
+
+    <span class="kw">assert</span> fetched.id == seeded.id
+    <span class="kw">assert</span> fetched.email == <span class="str">"ada@example.com"</span></code></pre>
+
+  <h3 class="mt1">How a <code>yield</code> fixture executes &mdash; step by step</h3>
+  <ol>
+    <li>Pytest sees the test names <code>db_session</code> as a parameter. It calls <code>db_session()</code> and runs everything <strong>up to <code>yield</code></strong> &mdash; engine, tables, session.</li>
+    <li>The yielded value (<code>db</code>) is passed into the test. The test body runs.</li>
+    <li>When the test finishes &mdash; <em>pass, fail, or even raise</em> &mdash; pytest resumes the fixture function from <strong>after the <code>yield</code></strong>. The <code>finally</code> block runs the cleanup.</li>
+  </ol>
+
+  <div class="cols mt1">
+    <div class="box box-green">
+      <h3>What we just gained</h3>
+      <ul>
+        <li>Setup is written <strong>once</strong>. Every new test just adds <code>db_session</code> as a parameter.</li>
+        <li>Cleanup is <strong>guaranteed</strong> &mdash; <code>try / finally</code> around <code>yield</code> runs the tear-down even if the test crashes.</li>
+        <li>The test body now reads as <strong>act + assert</strong> only. No engine, no <code>create_all</code>, no <code>close</code>.</li>
+      </ul>
+    </div>
+    <div class="box box-blue">
+      <h3>What needs <code>yield</code> &mdash; and what doesn&rsquo;t</h3>
+      <ul>
+        <li><strong>Yes:</strong> anything that holds a real-world resource &mdash; DB sessions, temp files, network sockets, dependency overrides.</li>
+        <li><strong>No:</strong> a plain Python value like <code>hashed_password</code> from earlier. Garbage collection handles those for free &mdash; <code>return</code> is enough.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="box box-purple mt1">
+    <h3>👉 In Our Employee Management Project</h3>
+    <ul>
+      <li>Open the manual SQLite test you wrote from the previous slide.</li>
+      <li>Lift the setup/teardown into a <code>db_session</code> fixture using <code>yield</code> &mdash; just like above.</li>
+      <li>Add the <code>db_session</code> parameter to <code>test_create_employee_persists_the_record</code>.</li>
+      <li><strong>Try this now:</strong> run <code>uv run pytest tests/test_employee_service.py -v</code>. Same green tick &mdash; far less code in the test body.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 20 — conftest (moved before scopes)
+     ============================================================ -->
+<section class="slide" id="s20">
+  <h1><code>conftest.py</code> &mdash; The Shared Fixture File</h1>
+  <p>The <code>db_session</code> fixture sits at the top of <code>test_employee_service.py</code> right now. But every test file that touches the database will need it. Copying the fixture into each file would put us right back where we started &mdash; duplication. <code>conftest.py</code> is pytest&rsquo;s answer.</p>
+
+  <div class="tree">
+tests/<br>
+&nbsp;&nbsp;<span class="muted">__init__.py</span><br>
+&nbsp;&nbsp;<strong>conftest.py</strong>          &larr; fixtures here are visible to every test below<br>
+&nbsp;&nbsp;test_auth_utils.py<br>
+&nbsp;&nbsp;test_employee_service.py<br>
+&nbsp;&nbsp;test_employees_api.py<br>
+  </div>
+
+<pre><code><span class="cm"># tests/conftest.py — shared across the whole test suite</span>
+<span class="kw">import</span> pytest_asyncio
+<span class="kw">from</span> sqlalchemy.ext.asyncio <span class="kw">import</span> <span class="fn">create_async_engine</span>, <span class="fn">async_sessionmaker</span>
+
+<span class="kw">from</span> database <span class="kw">import</span> Base
+
+
+<span class="dec">@pytest_asyncio.fixture</span>
+<span class="kw">async</span> <span class="kw">def</span> <span class="fn">db_session</span>():
+    engine = <span class="fn">create_async_engine</span>(<span class="str">"sqlite+aiosqlite:///:memory:"</span>)
+    <span class="kw">async</span> <span class="kw">with</span> engine.<span class="fn">begin</span>() <span class="kw">as</span> conn:
+        <span class="kw">await</span> conn.<span class="fn">run_sync</span>(Base.metadata.create_all)
+    db = <span class="fn">async_sessionmaker</span>(engine, expire_on_commit=<span class="num">False</span>)()
+    <span class="kw">try</span>:
+        <span class="kw">yield</span> db
+    <span class="kw">finally</span>:
+        <span class="kw">await</span> db.<span class="fn">close</span>()
+        <span class="kw">async</span> <span class="kw">with</span> engine.<span class="fn">begin</span>() <span class="kw">as</span> conn:
+            <span class="kw">await</span> conn.<span class="fn">run_sync</span>(Base.metadata.drop_all)
+        <span class="kw">await</span> engine.<span class="fn">dispose</span>()</code></pre>
+
+  <div class="box box-blue mt1">
+    <p><strong>No imports needed.</strong> Pytest auto-collects every <code>conftest.py</code> on the path. Any test below this folder can just write <code>def test_foo(db_session):</code> and pytest finds the fixture by name.</p>
+  </div>
+
+  <div class="box box-purple mt1">
+    <h3>👉 In Our Employee Management Project</h3>
+    <ul>
+      <li>Create <code>tests/conftest.py</code>.</li>
+      <li>Move the <code>db_session</code> fixture out of <code>test_employee_service.py</code> and into <code>conftest.py</code>.</li>
+      <li>Remove its import &mdash; test files don&rsquo;t import fixtures, they just name them as parameters.</li>
+      <li><strong>Try this now:</strong> run <code>uv run pytest -v</code>. Same green tick, with the fixture now reusable by every future test file.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 21 — scopes (moved after conftest)
+     ============================================================ -->
+<section class="slide" id="s21">
+  <h1>Fixture Scopes</h1>
+  <p>How <em>often</em> a fixture is rebuilt is controlled by its scope. Default is <code>function</code> &mdash; rebuilt for every test. That&rsquo;s what we want for <code>db_session</code> (each test gets a fresh DB). But not every fixture needs to be rebuilt that often.</p>
+
+  <table class="mt1">
+    <tr><th>Scope</th><th>Built once per&hellip;</th><th>Use for</th></tr>
+    <tr><td><code>function</code> (default)</td><td>each test function</td><td>fresh DB session, mutable state</td></tr>
+    <tr><td><code>class</code></td><td>each test class</td><td>shared object across one class</td></tr>
+    <tr><td><code>module</code></td><td>each test file</td><td>read-only data, parser configs</td></tr>
+    <tr><td><code>session</code></td><td>the entire test run</td><td>expensive engine, app config</td></tr>
+  </table>
+
+  <h3 class="mt1">Example &mdash; splitting the engine off as a session-scoped fixture</h3>
+<pre><code><span class="cm"># tests/conftest.py</span>
+<span class="dec">@pytest_asyncio.fixture(scope=<span class="str">"session"</span>, loop_scope=<span class="str">"session"</span>)</span>
+<span class="kw">async</span> <span class="kw">def</span> <span class="fn">engine</span>():
+<span class="hi">    engine = <span class="fn">create_async_engine</span>(<span class="str">"sqlite+aiosqlite:///:memory:"</span>)</span>   <span class="cm"># built ONCE per test run</span>
+    <span class="kw">async</span> <span class="kw">with</span> engine.<span class="fn">begin</span>() <span class="kw">as</span> conn:
+        <span class="kw">await</span> conn.<span class="fn">run_sync</span>(Base.metadata.create_all)
+    <span class="kw">yield</span> engine
+    <span class="kw">async</span> <span class="kw">with</span> engine.<span class="fn">begin</span>() <span class="kw">as</span> conn:
+        <span class="kw">await</span> conn.<span class="fn">run_sync</span>(Base.metadata.drop_all)
+    <span class="kw">await</span> engine.<span class="fn">dispose</span>()
+
+
+<span class="dec">@pytest_asyncio.fixture</span>                                     <span class="cm"># default = function scope</span>
+<span class="kw">async</span> <span class="kw">def</span> <span class="fn">db_session</span>(engine):                          <span class="cm"># fixtures can depend on fixtures</span>
+    db = <span class="fn">async_sessionmaker</span>(engine, expire_on_commit=<span class="num">False</span>)()
+    <span class="kw">try</span>:
+        <span class="kw">yield</span> db
+    <span class="kw">finally</span>:
+        <span class="kw">await</span> db.<span class="fn">close</span>()</code></pre>
+
+  <div class="box box-blue mt1">
+    <p><strong>The <code>loop_scope</code> bit:</strong> when an async fixture is widened past <code>function</code>, <code>pytest-asyncio</code> needs to know which event loop it lives on. Set <code>loop_scope</code> equal to (or wider than) the fixture scope so every consumer sees the same loop. Forget it and you&rsquo;ll get <em>"attached to a different loop"</em> errors at runtime.</p>
+  </div>
+
+  <div class="box box-orange mt1">
+    <p><strong>Trade-off:</strong> wider scope = faster (less rebuilding) but more leakage risk between tests. Default to <code>function</code>; widen only when the resource is read-only or expensive to build. The engine is fine at <code>session</code> &mdash; we wipe and recreate the tables per test, the engine itself is just a connection pool.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 21a — pytest.raises (moved from earlier in the deck)
+     ============================================================ -->
+<section class="slide" id="s15">
+  <h1>Testing Code That <em>Should</em> Raise</h1>
+  <p>Sometimes the right behaviour <strong>is</strong> an exception &mdash; e.g. looking up an employee that doesn&rsquo;t exist, or rejecting an empty name. How do we test that?</p>
+
+  <h3 class="mt1">The naive way (don&rsquo;t do this)</h3>
+<pre><code><span class="kw">def</span> <span class="fn">test_divide_by_zero</span>():
+    <span class="kw">try</span>:
+        <span class="fn">divide</span>(<span class="num">10</span>, <span class="num">0</span>)
+        <span class="kw">assert</span> <span class="num">False</span>, <span class="str">"expected ZeroDivisionError"</span>
+    <span class="kw">except</span> <span class="typ">ZeroDivisionError</span>:
+        <span class="kw">pass</span>            <span class="cm"># OK, that&rsquo;s what we wanted</span></code></pre>
+  <p>Works, but verbose &mdash; and easy to forget the <code>assert False</code>, in which case a missing exception silently passes the test.</p>
+
+  <h3 class="mt1">The pytest way</h3>
+<pre><code><span class="kw">import</span> pytest
+
+<span class="kw">def</span> <span class="fn">test_divide_by_zero</span>():
+<span class="hi">    <span class="kw">with</span> pytest.<span class="fn">raises</span>(<span class="typ">ZeroDivisionError</span>):</span>
+        <span class="fn">divide</span>(<span class="num">10</span>, <span class="num">0</span>)</code></pre>
+
+  <div class="box box-blue mt1">
+    <p><strong>Read it like English:</strong> "with pytest expecting a <code>ZeroDivisionError</code> &mdash; do this." If the block raises that exception, the test passes. If it raises something else, or doesn&rsquo;t raise at all, the test fails.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 21b — Real example + exc_info (moved)
+     ============================================================ -->
+<section class="slide" id="s16">
+  <h1>A Real Example &mdash; and Inspecting the Error</h1>
+  <p>Now that we have <code>db_session</code> in <code>conftest.py</code>, this slots in naturally. Look up an employee that doesn&rsquo;t exist &mdash; we expect <code>NotFoundException</code>.</p>
+
+<pre><code><span class="cm"># `pytest` (not `pytest_asyncio`) is what provides `pytest.raises`. The two</span>
+<span class="cm"># libraries cooperate — pytest is the framework; pytest-asyncio is a plugin</span>
+<span class="cm"># that adds async-fixture support. You never swap one for the other.</span>
+<span class="kw">import</span> pytest
+
+<span class="cm"># Our domain exception — raised by the service when a row is missing.</span>
+<span class="kw">from</span> exceptions <span class="kw">import</span> NotFoundException
+<span class="cm"># The function under test.</span>
+<span class="kw">from</span> employees <span class="kw">import</span> service <span class="kw">as</span> employee_service
+
+
+<span class="cm"># `async def` because the body uses `await`. The `db_session` fixture comes</span>
+<span class="cm"># from `conftest.py` — pytest-asyncio drives this on the event loop for us.</span>
+<span class="hi"><span class="kw">async</span> <span class="kw">def</span> <span class="fn">test_get_by_id_raises_when_missing</span>(db_session):</span>
+    <span class="cm"># Step 1: the exception itself</span>
+    <span class="cm"># `pytest.raises(...)` is a context manager that *expects* the block to</span>
+    <span class="cm"># raise the given exception. If it does → test passes. If it raises</span>
+    <span class="cm"># something else → test fails. If it raises nothing → test fails too.</span>
+    <span class="cm"># `as exc_info` captures a handle on the raised exception for later checks.</span>
+<span class="hi">    <span class="kw">with</span> pytest.<span class="fn">raises</span>(<span class="typ">NotFoundException</span>) <span class="kw">as</span> exc_info:</span>
+        <span class="cm"># `get_by_id` is `async def`, so we `await` it. The `await` lives</span>
+        <span class="cm"># *inside* the `with` block — that&rsquo;s the call we expect to raise.</span>
+<span class="hi">        <span class="kw">await</span> employee_service.<span class="fn">get_by_id</span>(db_session, <span class="num">9999</span>)</span>
+
+    <span class="cm"># Step 2: details about the exception</span>
+    <span class="cm"># `exc_info.value` is the actual exception object (a NotFoundException).</span>
+    <span class="cm"># Our base `AppException` exposes `.detail` — we assert the missing ID</span>
+    <span class="cm"># appears in it, locking in &quot;this exception with this content&quot;, not just</span>
+    <span class="cm"># &quot;some NotFoundException was raised somewhere&quot;.</span>
+<span class="hi">    <span class="kw">assert</span> <span class="str">"9999"</span> <span class="kw">in</span> exc_info.value.detail</span></code></pre>
+
+  <div class="cols mt1">
+    <div class="box box-green">
+      <h3>What the test guarantees</h3>
+      <ul>
+        <li><code>get_by_id</code> with a missing ID <em>must</em> raise <code>NotFoundException</code>.</li>
+        <li>The message <em>must</em> mention the ID (so users know what was missing).</li>
+      </ul>
+    </div>
+    <div class="box box-blue">
+      <h3>What is <code>exc_info</code>?</h3>
+      <ul>
+        <li>The handle pytest gives you on the raised exception.</li>
+        <li><code>exc_info.value</code> is the exception object itself.</li>
+        <li><code>exc_info.value.detail</code> is just our <code>AppException</code>&rsquo;s detail string.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="box box-orange mt1">
+    <p><strong>Why bother asserting the message?</strong> If the test only said <em>"some <code>NotFoundException</code> was raised"</em>, a future bug that raised it with the wrong ID would still pass. Asserting on the detail locks in the contract: <em>this exception, with this content</em>.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 21c — Hands-on: testing code that raises
+     ============================================================ -->
+<section class="slide" id="s16a">
+  <h1>👐 Your Turn &mdash; Test a Validation Error</h1>
+  <p><code>employee_service.update()</code> rejects an empty <code>name</code> by raising <code>BadRequestException</code>. Let&rsquo;s lock that contract in.</p>
+
+  <div class="cols mt1">
+    <div class="box box-green">
+      <h3>The task (5 minutes)</h3>
+      <p>Add a test to <code>tests/test_employee_service.py</code>:</p>
+      <ol>
+        <li>Use the <code>db_session</code> fixture from <code>conftest.py</code>.</li>
+        <li>Create an employee first via <code>employee_service.create()</code> so an ID exists to update.</li>
+        <li>Try to update that employee&rsquo;s name to <code>"   "</code> (whitespace only).</li>
+        <li>Assert <code>BadRequestException</code> is raised, and that its <code>detail</code> mentions <code>"name"</code>.</li>
+      </ol>
+    </div>
+    <div class="box box-blue">
+      <h3>Skeleton</h3>
+<pre><code><span class="kw">import</span> pytest
+<span class="kw">from</span> auth.utils <span class="kw">import</span> hash_password
+<span class="kw">from</span> exceptions <span class="kw">import</span> BadRequestException
+<span class="kw">from</span> employees <span class="kw">import</span> service <span class="kw">as</span> employee_service
+<span class="kw">from</span> employees.schemas <span class="kw">import</span> EmployeeUpdate
+<span class="kw">from</span> models.employee <span class="kw">import</span> Employee
+
+
+<span class="hi"><span class="kw">async</span> <span class="kw">def</span> <span class="fn">test_update_rejects_blank_name</span>(db_session):</span>
+    <span class="cm"># Seed directly via the async ORM session — service.create currently</span>
+    <span class="cm"># drops password, so we bypass it to get a valid row.</span>
+    employee = <span class="typ">Employee</span>(name=<span class="str">"Ada"</span>,
+                        email=<span class="str">"ada@example.com"</span>,
+                        password_hash=<span class="fn">hash_password</span>(<span class="str">"secret123"</span>))
+    db_session.<span class="fn">add</span>(employee)
+<span class="hi">    <span class="kw">await</span> db_session.<span class="fn">commit</span>()</span>
+<span class="hi">    <span class="kw">await</span> db_session.<span class="fn">refresh</span>(employee)</span>
+
+    <span class="kw">with</span> pytest.<span class="fn">raises</span>(...) <span class="kw">as</span> exc_info:
+<span class="hi">        <span class="kw">await</span> employee_service.<span class="fn">update</span>(db_session, employee.id,</span>
+            <span class="fn">EmployeeUpdate</span>(name=<span class="str">"   "</span>))
+
+    <span class="kw">assert</span> ... <span class="kw">in</span> exc_info.value.detail</code></pre>
+    </div>
+  </div>
+
+  <div class="box box-orange mt1">
+    <p>Run <code>uv run pytest tests/test_employee_service.py -v</code>. You should see the test pass &mdash; if it fails, read the error: are you raising the right exception, with the right message?</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 23 — Writing Effective Unit Tests
+     ============================================================ -->
+<section class="slide" id="s23">
+  <h1>Writing Effective Unit Tests</h1>
+
+  <div class="cols-3 mt1">
+    <div class="box box-blue">
+      <h3>1. Group related tests</h3>
+      <ul>
+        <li>One test file per module. Mirror the source tree.</li>
+        <li>Name tests by <strong>behaviour</strong>, not by function number.</li>
+      </ul>
+    </div>
+
+    <div class="box box-green">
+      <h3>2. Write clear assertions</h3>
+      <ul>
+        <li>One outcome per test.</li>
+        <li>Prefer <code>==</code> over truthy checks.</li>
+      </ul>
+    </div>
+
+    <div class="box box-orange">
+      <h3>3. Isolate tests</h3>
+      <ul>
+        <li>No test should depend on another.</li>
+        <li>Fresh fixtures every time &mdash; no shared state.</li>
+        <li>Any single test should pass on its own.</li>
+      </ul>
+    </div>
+  </div>
+
+</section>
+
+<!-- ============================================================
+     SLIDE 25 — Hands On (Session 1)
+     ============================================================ -->
+<section class="slide" id="s25">
+  <h1>👐 Hands On &mdash; Session 1 (12 min)</h1>
+  <p>Open <code>tests/test_handson_session1.py</code>. Three tests are stubbed with <code>pytest.skip(...)</code>. Replace each skip with a real implementation against <code>departments/service.py</code>.</p>
+
+  <div class="mt1">
+    <div class="box box-blue">
+      <h3>Task 1 &mdash; Fixture + plain assert</h3>
+      <p><code>async def test_create_department_persists_name(db_session)</code></p>
+      <ul>
+        <li>Build <code>DepartmentCreate(name="Engineering")</code>.</li>
+        <li><code>await department_service.create(db_session, body)</code>.</li>
+        <li>Assert the returned object has <code>id</code> set and <code>name == "Engineering"</code>.</li>
+      </ul>
+    </div>
+    <div class="box box-green">
+      <h3>Task 2 &mdash; <code>pytest.raises</code></h3>
+      <p><code>async def test_get_by_id_raises_for_unknown_id(db_session)</code></p>
+      <ul>
+        <li>Use <code>pytest.raises(NotFoundException) as exc_info</code>.</li>
+        <li>Inside the block, <code>await department_service.get_by_id(db_session, 9999)</code>.</li>
+        <li>After the block, assert <code>"9999"</code> is in <code>exc_info.value.detail</code>.</li>
+      </ul>
+    </div>
+    <div class="box box-orange">
+      <h3>Task 3 &mdash; <code>@parametrize</code> over invalid names</h3>
+      <p><code>async def test_create_rejects_invalid_names(db_session, name)</code></p>
+      <ul>
+        <li>Decorate with <code>@pytest.mark.parametrize("name", ["", "   ", None])</code>.</li>
+        <li>Build the body via <code>DepartmentCreate.model_construct(name=name)</code> &mdash; skips Pydantic validation so the service&rsquo;s own guard fires.</li>
+        <li>Inside <code>pytest.raises(BadRequestException)</code>, <code>await department_service.create(db_session, body)</code>.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="box box-purple mt1">
+    <p><strong>Run:</strong> <code>uv run pytest tests/test_handson_session1.py -v</code> &mdash; expect 3 SKIPPED at first, all PASSED when done. Stuck? Worked solutions live in <code>tests/handson_solutions/session1_solution.py</code>.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 25 — Session 1 recap
+     ============================================================ -->
+<section class="slide" id="s26">
+  <h1>Session 1 Recap</h1>
+
+  <div class="mt1">
+    <div class="box box-blue">
+      <h3>1. Why test</h3>
+      <p>Y2K bug, the airbag analogy, the 5 reasons unit tests pay for themselves. Many fast units, fewer integrations, a handful of E2E.</p>
+    </div>
+    <div class="box box-green">
+      <h3>2. Pytest discovery</h3>
+      <p><code>test_*.py</code> files, <code>test_*</code> functions, <code>Test*</code> classes. Plain <code>assert</code> &mdash; the message comes for free.</p>
+    </div>
+    <div class="box box-orange">
+      <h3>3. Fixtures</h3>
+      <p>Reusable setup, injected by parameter name. <code>yield</code> for teardown. Scope controls how often it rebuilds. <code>conftest.py</code> for sharing.</p>
+    </div>
+    <div class="box box-purple">
+      <h3>4. Testing what should raise</h3>
+      <p><code>pytest.raises</code> locks in the contract: <em>this exception, with this content</em>. Assert on <code>exc_info.value.detail</code> so a wrong-but-related error doesn&rsquo;t slip through.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     BREAK SLIDE
+     ============================================================ -->
+<section class="slide break-slide" id="s27">
+  <h1>Break</h1>
+  <p>Back in 10 minutes</p>
+</section>
+
+<!-- ============================================================
+     SECTION 4 — FastAPI TestClient
+     ============================================================ -->
+<section class="slide section-divider" id="s28">
+  <div class="section-number">04</div>
+  <h1>FastAPI TestClient</h1>
+</section>
+
+<!-- ============================================================
+     SLIDE 28 — what is TestClient
+     ============================================================ -->
+<section class="slide" id="s29">
+  <h1>What is <code>TestClient</code>?</h1>
+  <p>A client that calls your FastAPI app <strong>in-process</strong>, no HTTP server needed.</p>
+
+  <div class="cols mt1">
+    <div class="box box-blue">
+      <h3>Without TestClient</h3>
+      <ul>
+        <li>Start uvicorn on a port</li>
+        <li>Spawn a real HTTP request</li>
+        <li>Tear down the server</li>
+        <li>Slow, flaky, hard to debug</li>
+      </ul>
+    </div>
+    <div class="box box-green">
+      <h3>With <code>httpx.AsyncClient</code> + ASGITransport</h3>
+      <ul>
+        <li>Calls your app object directly via ASGI</li>
+        <li>Same routes, dependencies, exception handlers</li>
+        <li>Async API: <code>await client.get(...)</code>, <code>await client.post(...)</code></li>
+        <li>Fast and deterministic; stays on the same event loop as the app</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="box box-orange mt1">
+    <p><strong>Why this matters:</strong> you can write tests that look exactly like real HTTP calls &mdash; same status codes, same JSON bodies &mdash; without the cost of running a real server.</p>
+  </div>
+
+  <div class="box box-purple mt1">
+    <p><strong>Why <code>AsyncClient</code> and not <code>TestClient</code>?</strong> Every route in this app is <code>async def</code>. <code>TestClient</code> is built on httpx but exposes a sync API &mdash; it shells the call into a thread under the hood. <code>AsyncClient</code> keeps the test body on the same event loop as the app, so <code>await client.get(...)</code> reads exactly like the production code.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 30 — first AsyncClient call
+     ============================================================ -->
+<section class="slide" id="s30">
+  <h1>First <code>AsyncClient</code> Call</h1>
+
+  <ul>
+    <li><strong>Use case</strong> &mdash; verify a public endpoint (e.g. <code>/health</code>) returns the right status code and JSON body.</li>
+    <li><strong>Why we need it</strong> &mdash; quick sanity check that routing, serialization and the app object are wired up &mdash; in milliseconds, no server, no port, no Postgres.</li>
+    <li><strong>How to use it</strong> &mdash; the <code>client</code> fixture (next slide) hands you an <code>AsyncClient</code> already wired to the app. Test body is <code>async def</code>; every call is <code>await client.&lt;verb&gt;(...)</code>.</li>
+  </ul>
+
+<pre><code><span class="cm"># tests/test_employees_api.py</span>
+
+
+<span class="hi"><span class="kw">async</span> <span class="kw">def</span> <span class="fn">test_health_endpoint_is_public</span>(client):</span>
+<span class="hi">    response = <span class="kw">await</span> client.<span class="fn">get</span>(<span class="str">"/health"</span>)</span>
+    <span class="kw">assert</span> response.status_code == <span class="num">200</span>
+    <span class="kw">assert</span> response.<span class="fn">json</span>()[<span class="str">"status"</span>] == <span class="str">"healthy"</span></code></pre>
+
+  <div class="box box-blue mt1">
+    <p><strong>Anatomy:</strong> response object exposes <code>.status_code</code>, <code>.json()</code>, <code>.text</code>, <code>.headers</code> &mdash; same shape as raw <code>httpx</code> because <code>AsyncClient</code> <em>is</em> httpx.</p>
+  </div>
+
+  <div class="box box-blue mt1">
+    <p><strong>No decorator?</strong> Right &mdash; <code>asyncio_mode = "auto"</code> in <code>pyproject.toml</code> tells <code>pytest-asyncio</code> to run every <code>async def test_…</code> on an event loop automatically.</p>
+  </div>
+
+  <div class="box box-orange mt1">
+    <p><strong>But this hits the real database!</strong> We need to swap <code>get_db</code> before our tests are reproducible. That&rsquo;s the next slide.</p>
+  </div>
+
+  <div class="box box-purple mt1">
+    <h3>👉 In Our Employee Management Project</h3>
+    <ul>
+      <li>Open <code>tests/test_employees_api.py</code> &mdash; the <code>client</code> fixture is already imported from <code>conftest.py</code>.</li>
+      <li><strong>Try this now:</strong> run <code>uv run pytest tests/test_employees_api.py::test_health_endpoint_is_public -v</code>. Passes without you starting <code>uvicorn</code>.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 30 — Dependency override for TestClient
+     ============================================================ -->
+<section class="slide" id="s31">
+  <h1>Overriding the DB Dependency for <code>AsyncClient</code></h1>
+  <p>The <code>db_session</code> fixture in <code>conftest.py</code> gives each test a fresh async SQLite session. Routes call <code>get_db()</code> via FastAPI&rsquo;s dependency system &mdash; that path doesn&rsquo;t know about our fixture. <code>app.dependency_overrides</code> is the bridge.</p>
+
+  <div class="cols mt1">
+    <div class="box box-blue">
+      <h3>What <code>app.dependency_overrides</code> is</h3>
+      <ul>
+        <li>A dict on the FastAPI <code>app</code>.</li>
+        <li>Keys: the original dependency function (<code>get_db</code>).</li>
+        <li>Values: the replacement &mdash; since <code>get_db</code> is an <strong>async generator</strong>, the override must be one too.</li>
+        <li>Cleared at the end so the next test isn&rsquo;t affected.</li>
+      </ul>
+    </div>
+    <div class="box box-green">
+      <h3>Why a separate <code>client</code> fixture</h3>
+      <ul>
+        <li>Unit tests just need <code>db_session</code> &mdash; no HTTP.</li>
+        <li>HTTP tests need both: a session for setup, and an <code>AsyncClient</code> whose routes use that same session.</li>
+        <li>The <code>client</code> fixture wires the two together.</li>
+      </ul>
+    </div>
+  </div>
+
+<pre><code><span class="cm"># tests/conftest.py — adding the client fixture alongside db_session</span>
+<span class="kw">import</span> pytest_asyncio
+<span class="kw">from</span> httpx <span class="kw">import</span> AsyncClient, ASGITransport
+<span class="kw">from</span> database <span class="kw">import</span> get_db
+<span class="kw">from</span> main <span class="kw">import</span> app
+
+
+<span class="dec">@pytest_asyncio.fixture</span>
+<span class="kw">async</span> <span class="kw">def</span> <span class="fn">client</span>(db_session):
+<span class="hi">    <span class="kw">async</span> <span class="kw">def</span> <span class="fn">_override_get_db</span>():</span>
+<span class="hi">        <span class="kw">yield</span> db_session</span>                                       <span class="cm"># async generator, matches the real get_db</span>
+
+<span class="hi">    app.dependency_overrides[get_db] = _override_get_db</span>     <span class="cm"># every route now sees the test session</span>
+<span class="hi">    transport = <span class="fn">ASGITransport</span>(app=app)</span>                       <span class="cm"># httpx talks to ASGI in-process, no socket</span>
+<span class="hi">    <span class="kw">async</span> <span class="kw">with</span> <span class="fn">AsyncClient</span>(transport=transport, base_url=<span class="str">"http://test"</span>) <span class="kw">as</span> c:</span>
+        <span class="kw">yield</span> c
+<span class="hi">    app.dependency_overrides.<span class="fn">clear</span>()</span>                       <span class="cm"># reset for the next test</span></code></pre>
+
+  <div class="box box-orange mt1">
+    <p><strong>The same trick works for any dependency.</strong> Fake the current user, the JWT decoder, a third-party HTTP client &mdash; add another entry to <code>app.dependency_overrides</code>. Same pattern, same teardown.</p>
+  </div>
+
+  <h3 class="mt1">A real test &mdash; seed the DB, then call the route</h3>
+  <p>The cleanest way to set up state for an HTTP test is to insert directly via the async session: every <code>add</code> happens against the same connection the route handler will read from.</p>
+
+<pre><code><span class="cm"># tests/test_employees_api.py</span>
+<span class="kw">from</span> auth.utils <span class="kw">import</span> hash_password
+<span class="kw">from</span> models.employee <span class="kw">import</span> Employee, EmployeeRole
+
+
+<span class="hi"><span class="kw">async</span> <span class="kw">def</span> <span class="fn">test_list_employees_returns_seeded_rows</span>(client, db_session):</span>
+<span class="hi">    <span class="cm"># 1. Seed two employees directly via the async ORM session</span></span>
+<span class="hi">    db_session.<span class="fn">add</span>(<span class="typ">Employee</span>(</span>
+<span class="hi">        name=<span class="str">"Ada"</span>, email=<span class="str">"ada@example.com"</span>,</span>
+<span class="hi">        password_hash=<span class="fn">hash_password</span>(<span class="str">"pw"</span>),</span>
+<span class="hi">        role=EmployeeRole.HR,</span>
+<span class="hi">    ))</span>
+<span class="hi">    db_session.<span class="fn">add</span>(<span class="typ">Employee</span>(</span>
+<span class="hi">        name=<span class="str">"Bob"</span>, email=<span class="str">"bob@example.com"</span>,</span>
+<span class="hi">        password_hash=<span class="fn">hash_password</span>(<span class="str">"pw"</span>),</span>
+<span class="hi">        role=EmployeeRole.DEVELOPER,</span>
+<span class="hi">    ))</span>
+<span class="hi">    <span class="kw">await</span> db_session.<span class="fn">commit</span>()</span>
+
+<span class="hi">    <span class="cm"># 2. Call the route — same SQLite session, same data</span></span>
+<span class="hi">    response = <span class="kw">await</span> client.<span class="fn">get</span>(<span class="str">"/employees"</span>)</span>
+
+    <span class="cm"># 3. Assert the response</span>
+    <span class="kw">assert</span> response.status_code == <span class="num">200</span>
+    emails = {row[<span class="str">"email"</span>] <span class="kw">for</span> row <span class="kw">in</span> response.<span class="fn">json</span>()}
+    <span class="kw">assert</span> emails == {<span class="str">"ada@example.com"</span>, <span class="str">"bob@example.com"</span>}</code></pre>
+
+  <div class="box box-blue mt1">
+    <p><strong>How seeding works:</strong> <code>db_session</code> and <code>client</code> share the <em>same</em> <code>AsyncSession</code> (thanks to the override). Rows inserted via <code>db_session.add(...)</code> + <code>await db_session.commit()</code> are visible to the route handler when <code>await client.get(...)</code> fires &mdash; no second DB, no extra wiring.</p>
+  </div>
+
+  <div class="box box-purple mt1">
+    <h3>👉 In Our Employee Management Project</h3>
+    <ul>
+      <li>Open <code>tests/conftest.py</code> &mdash; the <code>client</code> fixture is already there. Walk the override.</li>
+      <li>Open <code>tests/test_employees_api.py::test_list_employees_returns_seeded_rows</code>.</li>
+      <li><strong>Try this now:</strong> <code>uv run pytest tests/test_employees_api.py -v</code> &mdash; hits SQLite, not your real Postgres.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 32 — Calling endpoints
+     ============================================================ -->
+<section class="slide" id="s33">
+  <h1>Hitting Endpoints with <code>AsyncClient</code></h1>
+
+  <ul>
+    <li><strong>Use case</strong> &mdash; drive a real route end-to-end: request body &rarr; validation &rarr; handler &rarr; response, and assert on what came back.</li>
+    <li><strong>Why we need it</strong> &mdash; bugs hide at the <em>seams</em> between layers (e.g. login expects form-encoded data, not JSON). Unit tests miss those; this catches them.</li>
+    <li><strong>How to use it</strong> &mdash; pick the right kwarg per content type: <code>params=</code> for query strings, <code>json=</code> for JSON bodies, <code>data=</code> for OAuth2 / HTML forms, <code>headers=</code> for auth. Every call is <code>await</code>ed.</li>
+  </ul>
+
+<pre><code><span class="kw">import</span> pytest
+<span class="kw">from</span> auth.utils <span class="kw">import</span> hash_password
+<span class="kw">from</span> models.employee <span class="kw">import</span> Employee
+
+
+<span class="cm"># Validation example — Pydantic catches missing required fields</span>
+<span class="cm"># before the handler runs. One parametrize, three cases.</span>
+<span class="dec">@pytest.mark.parametrize</span>(<span class="str">"missing_field,payload"</span>, [
+    (<span class="str">"email"</span>,    {<span class="str">"name"</span>: <span class="str">"X"</span>, <span class="str">"password"</span>: <span class="str">"abc123"</span>}),
+    (<span class="str">"name"</span>,     {<span class="str">"email"</span>: <span class="str">"x@y.com"</span>, <span class="str">"password"</span>: <span class="str">"abc123"</span>}),
+    (<span class="str">"password"</span>, {<span class="str">"name"</span>: <span class="str">"X"</span>, <span class="str">"email"</span>: <span class="str">"x@y.com"</span>}),
+])
+<span class="hi"><span class="kw">async</span> <span class="kw">def</span> <span class="fn">test_create_missing_required_field_returns_422</span>(client, missing_field, payload):</span>
+<span class="hi">    response = <span class="kw">await</span> client.<span class="fn">post</span>(<span class="str">"/employees"</span>, json=payload)</span>
+    <span class="kw">assert</span> response.status_code == <span class="num">422</span>
+    detail = response.<span class="fn">json</span>()[<span class="str">"detail"</span>]
+    <span class="kw">assert</span> <span class="fn">any</span>(missing_field <span class="kw">in</span> item[<span class="str">"field"</span>] <span class="kw">for</span> item <span class="kw">in</span> detail)
+
+
+<span class="cm"># 404 example — service raises NotFoundException; handler maps it.</span>
+<span class="hi"><span class="kw">async</span> <span class="kw">def</span> <span class="fn">test_get_unknown_employee_returns_404</span>(client):</span>
+<span class="hi">    response = <span class="kw">await</span> client.<span class="fn">get</span>(<span class="str">"/employees/9999"</span>)</span>
+    <span class="kw">assert</span> response.status_code == <span class="num">404</span>
+    <span class="kw">assert</span> <span class="str">"9999"</span> <span class="kw">in</span> response.<span class="fn">json</span>()[<span class="str">"detail"</span>]</code></pre>
+
+  <table class="mt1">
+    <tr><th>Verb</th><th>Method</th><th>Body</th></tr>
+    <tr><td>GET</td><td><code>await client.get(url, params=&hellip;)</code></td><td>none</td></tr>
+    <tr><td>POST/PUT</td><td><code>await client.post(url, json=&hellip;)</code></td><td>JSON body</td></tr>
+    <tr><td>POST (form)</td><td><code>await client.post(url, data=&hellip;)</code></td><td>form-encoded (OAuth2 login)</td></tr>
+    <tr><td>any</td><td><code>await client.request(verb, url, headers=&hellip;)</code></td><td>everything else</td></tr>
+  </table>
+
+  <div class="box box-orange mt1">
+    <p><strong>Heads-up &mdash; <code>/auth/login</code> is broken today.</strong> <code>auth/router.py</code> still uses sync <code>Session = Depends(get_db)</code>; the dedicated login test is out of the suite until that&rsquo;s converted. The form-data lesson still applies whenever someone restores it.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 33 — testing protected routes
+     ============================================================ -->
+<section class="slide" id="s34">
+  <h1>Testing Protected Routes (the pattern)</h1>
+
+  <ul>
+    <li><strong>Use case</strong> &mdash; most endpoints sit behind <code>Depends(require_role(...))</code>; tests must prove HR can create employees, Developers cannot, and unauthenticated callers get <code>401</code>.</li>
+    <li><strong>Why we need it</strong> &mdash; authorization bugs are silent and dangerous (a Developer accidentally deleting users). Test both the <em>allow</em> and <em>deny</em> paths for every role.</li>
+    <li><strong>How to use it</strong> &mdash; build an <code>auth_headers</code> fixture that mints a JWT for any role, then pass <code>headers=auth_headers(role=...)</code> on each protected call. Two ways to authenticate &mdash; use the <strong>token</strong> approach for speed.</li>
+  </ul>
+
+  <div class="cols mt1">
+    <div>
+      <div class="col-label">1. Mint a JWT directly</div>
+<pre><code><span class="dec">@pytest.fixture</span>
+<span class="kw">def</span> <span class="fn">auth_headers</span>():
+    <span class="kw">def</span> <span class="fn">_make</span>(role=EmployeeRole.DEVELOPER):
+        token = <span class="fn">create_access_token</span>(
+            {<span class="str">"id"</span>: <span class="num">1</span>, <span class="str">"email"</span>: <span class="str">"t@x.com"</span>,
+             <span class="str">"role"</span>: role.value}
+        )
+        <span class="kw">return</span> {<span class="str">"Authorization"</span>: <span class="fn">f</span><span class="str">"Bearer {token}"</span>}
+    <span class="kw">return</span> _make</code></pre>
+    </div>
+    <div>
+      <div class="col-label">2. Use it on every protected call</div>
+<pre><code><span class="hi"><span class="kw">async</span> <span class="kw">def</span> <span class="fn">test_developer_cannot_create</span>(client, auth_headers):</span>
+<span class="hi">    r = <span class="kw">await</span> client.<span class="fn">post</span>(</span>
+        <span class="str">"/employees"</span>,
+<span class="hi">        headers=<span class="fn">auth_headers</span>(role=EmployeeRole.DEVELOPER),</span>
+        json={<span class="str">"name"</span>: <span class="str">"X"</span>, ...},
+    )
+    <span class="kw">assert</span> r.status_code == <span class="num">403</span>
+
+
+<span class="hi"><span class="kw">async</span> <span class="kw">def</span> <span class="fn">test_hr_can_create</span>(client, auth_headers):</span>
+<span class="hi">    r = <span class="kw">await</span> client.<span class="fn">post</span>(</span>
+        <span class="str">"/employees"</span>,
+<span class="hi">        headers=<span class="fn">auth_headers</span>(role=EmployeeRole.HR),</span>
+        json={...},
+    )
+    <span class="kw">assert</span> r.status_code == <span class="num">201</span></code></pre>
+    </div>
+  </div>
+
+  <div class="box box-green mt1">
+    <p><strong>Why mint, not log in?</strong> Logging in tests too many things at once. By minting a token we test <em>just</em> the authorization rule, not bcrypt + login. Login itself gets its own dedicated test.</p>
+  </div>
+
+  <div class="box box-orange mt1">
+    <p><strong>Heads-up &mdash; this is concept-only today.</strong> <code>employees/router.py</code> imports <code>require_role</code> and <code>get_current_user</code> but never wires them as <code>Depends(...)</code>. So the routes are currently unguarded &mdash; the <code>auth_headers</code> fixture builds tokens correctly, but sending one doesn&rsquo;t change the response code. Teach the pattern; the fixture starts being useful again the moment someone adds <code>Depends(require_role(...))</code> back to the routes.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 34 — full integration test example
+     ============================================================ -->
+<section class="slide" id="s35">
+  <h1>End-to-End Flow &mdash; the goal (today: validation + 404 stand in)</h1>
+
+  <ul>
+    <li><strong>Use case</strong> &mdash; one test that proves the product promise: "an HR user can create a new employee" &mdash; in a single, readable request.</li>
+    <li><strong>Why we need it</strong> &mdash; the test exercises every layer at once (auth, validation, service, DB, response). If it passes, you have real confidence the feature works.</li>
+    <li><strong>How to use it (when wired):</strong> <code>POST /employees</code> with HR headers + a valid body, then assert on status, returned shape, and what <em>must not</em> leak.</li>
+  </ul>
+
+<pre><code><span class="cm"># Aspirational shape — runs once auth is re-wired and service.create</span>
+<span class="cm"># persists password + role.</span>
+<span class="hi"><span class="kw">async</span> <span class="kw">def</span> <span class="fn">test_hr_can_create_employee</span>(client, auth_headers):</span>
+<span class="hi">    response = <span class="kw">await</span> client.<span class="fn">post</span>(</span>
+        <span class="str">"/employees"</span>,
+        headers=<span class="fn">auth_headers</span>(role=EmployeeRole.HR),
+        json={
+            <span class="str">"name"</span>:     <span class="str">"New Hire"</span>,
+            <span class="str">"email"</span>:    <span class="str">"new@example.com"</span>,
+            <span class="str">"password"</span>: <span class="str">"abc123"</span>,
+            <span class="str">"role"</span>:     <span class="str">"DEVELOPER"</span>,
+        },
+    )
+    <span class="kw">assert</span> response.status_code == <span class="num">201</span>
+    body = response.<span class="fn">json</span>()
+    <span class="kw">assert</span> body[<span class="str">"email"</span>] == <span class="str">"new@example.com"</span>
+    <span class="kw">assert</span> body[<span class="str">"role"</span>] == <span class="str">"DEVELOPER"</span>
+<span class="hi">    <span class="kw">assert</span> <span class="str">"password"</span> <span class="kw">not in</span> body         <span class="cm"># never leak the input</span></span>
+<span class="hi">    <span class="kw">assert</span> <span class="str">"password_hash"</span> <span class="kw">not in</span> body    <span class="cm"># never leak the hash</span></span></code></pre>
+
+  <div class="box box-orange mt1">
+    <p><strong>Currently can&rsquo;t run end-to-end</strong> for two reasons in the app code:</p>
+    <ol>
+      <li><code>/employees</code> has no auth dependency wired &mdash; the role check is theoretical.</li>
+      <li><code>employee_service.create()</code> drops <code>body.password</code>; the <code>password_hash NOT NULL</code> column rejects the insert.</li>
+    </ol>
+    <p>Until both are fixed, demo the <strong>same idea at narrower scope</strong>:</p>
+  </div>
+
+<pre><code><span class="cm"># tests/test_employees_api.py — runs today</span>
+<span class="hi"><span class="kw">async</span> <span class="kw">def</span> <span class="fn">test_delete_employee_returns_204_then_404_on_re_read</span>(client, db_session):</span>
+    seeded = <span class="kw">await</span> <span class="fn">_seed_employee</span>(db_session)
+
+<span class="hi">    deleted = <span class="kw">await</span> client.<span class="fn">delete</span>(<span class="fn">f</span><span class="str">"/employees/{seeded.id}"</span>)</span>
+    <span class="kw">assert</span> deleted.status_code == <span class="num">204</span>
+
+<span class="hi">    re_read = <span class="kw">await</span> client.<span class="fn">get</span>(<span class="fn">f</span><span class="str">"/employees/{seeded.id}"</span>)</span>
+    <span class="kw">assert</span> re_read.status_code == <span class="num">404</span></code></pre>
+
+  <div class="box box-blue mt1">
+    <p><strong>What this version exercises:</strong> routing &rarr; service &rarr; repository soft-delete &rarr; SQLAlchemy commit &rarr; second route &rarr; <code>NotFoundException</code> &rarr; exception handler &rarr; <code>404</code>. Two <code>await client.&lt;verb&gt;</code> calls cover three layers each.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     SECTION 5 — Mocking (callback to airbag)
+     ============================================================ -->
+<section class="slide section-divider" id="s36">
+  <div class="section-number">05</div>
+  <h1>Mocking</h1>
+</section>
+
+<!-- ============================================================
+     SLIDE 36 — Back to the airbag
+     ============================================================ -->
+<section class="slide hero-slide" id="s37">
+  <p class="big-quote">Now we test <em>our</em> airbag &mdash; <code>auth_service.login()</code> &mdash; without spinning up a real database.</p>
+  <p class="lead">Replace the repository with a mock. Verify the right method was called. Confirm the right token was minted. No SQLite, no Postgres, no network.</p>
+</section>
+
+<!-- ============================================================
+     SLIDE 37 — When to mock
+     ============================================================ -->
+<section class="slide" id="s38">
+  <h1>When to Mock (and When Not To)</h1>
+
+  <div class="cols mt1">
+    <div class="box box-green">
+      <h3>Mock when&hellip;</h3>
+      <ul>
+        <li>The dependency is slow / flaky (network, S3, payments).</li>
+        <li>It's non-deterministic (time, randomness, UUIDs).</li>
+        <li>You're testing <em>interactions</em> ("did we call <code>send_email</code>?").</li>
+        <li>You want to simulate a failure that's hard to reproduce (DB down).</li>
+      </ul>
+    </div>
+    <div class="box box-red">
+      <h3>Don't mock when&hellip;</h3>
+      <ul>
+        <li>The collaborator is cheap and deterministic (in-memory SQLite).</li>
+        <li>You'd be re-implementing the thing you're trying to test.</li>
+        <li>The mock setup is longer than the test it enables.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="box box-orange mt1">
+    <p><strong>Smell:</strong> if your mocks need to be updated every time the implementation changes, you're testing the implementation instead of the behaviour. Pull back &mdash; let real code do real things where it's cheap.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 38 — Meet monkeypatch
+     ============================================================ -->
+<section class="slide" id="s39">
+  <h1>Meet <code>monkeypatch</code></h1>
+  <p>Pytest ships with a built-in fixture called <code>monkeypatch</code> that lets you <strong>temporarily replace</strong> an attribute, environment variable, or function for the duration of a test. When the test ends, pytest restores the original automatically &mdash; no cleanup, no leaks.</p>
+
+  <div class="cols mt1">
+    <div class="box box-green">
+      <h3>What it&rsquo;s for</h3>
+      <ul>
+        <li>Avoid hitting the network, DB, or file system during a test.</li>
+        <li>Replace a function&rsquo;s return value with a known fake.</li>
+        <li>Set / unset environment variables safely.</li>
+      </ul>
+    </div>
+    <div class="box box-blue">
+      <h3>The 3 calls you&rsquo;ll use</h3>
+      <ul>
+        <li><code>monkeypatch.setattr(target, value)</code></li>
+        <li><code>monkeypatch.setenv(name, value)</code></li>
+        <li><code>monkeypatch.delenv(name)</code></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="box box-orange mt1">
+    <p><strong>Mental model:</strong> "for this one test, pretend X is Y." When the test finishes, pytest puts X back to what it was.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 39 — Example 1: mock environment variable
+     ============================================================ -->
+<section class="slide" id="s40">
+  <h1>Example 1 &mdash; Mocking an Environment Variable</h1>
+  <p>Our app reads <code>JWT_SECRET</code> from the environment. In a test, we don&rsquo;t want to depend on the real secret &mdash; just provide a fake one.</p>
+
+<pre><code><span class="kw">import</span> os
+
+<span class="kw">def</span> <span class="fn">test_jwt_secret_is_read_from_env</span>(monkeypatch):
+<span class="hi">    monkeypatch.<span class="fn">setenv</span>(<span class="str">"JWT_SECRET"</span>, <span class="str">"test-secret-123"</span>)</span>
+
+    <span class="kw">assert</span> os.<span class="fn">getenv</span>(<span class="str">"JWT_SECRET"</span>) == <span class="str">"test-secret-123"</span>
+    <span class="cm"># …call the function that reads JWT_SECRET and assert its behaviour</span></code></pre>
+
+  <div class="box box-green mt1">
+    <p><strong>After the test:</strong> <code>JWT_SECRET</code> goes back to whatever it was (or unset). The next test sees a clean environment &mdash; guaranteed.</p>
+  </div>
+
+  <div class="box box-purple mt1">
+    <h3>👉 In Our Employee Management Project</h3>
+    <ul>
+      <li>Find any setting your code reads from <code>os.getenv</code> &mdash; e.g. <code>JWT_SECRET</code>, <code>DATABASE_URL</code>.</li>
+      <li><strong>Try this now:</strong> write a test that uses <code>monkeypatch.setenv</code> to set a known value, then assert your code reads it correctly.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 40 — Example 2: mock a function response
+     ============================================================ -->
+<section class="slide" id="s41">
+  <h1>Example 2 &mdash; Mocking a Function Response</h1>
+  <p>The login service calls <code>employee_repo.get_by_email(...)</code> which hits the database. In a unit test we want to skip the DB entirely and just return a fake employee.</p>
+
+<pre><code><span class="kw">from</span> employees.models <span class="kw">import</span> Employee, EmployeeRole
+<span class="kw">from</span> auth <span class="kw">import</span> service <span class="kw">as</span> auth_service
+
+<span class="kw">def</span> <span class="fn">test_login_returns_token</span>(monkeypatch):
+    fake_employee = <span class="typ">Employee</span>(
+        id=<span class="num">1</span>, name=<span class="str">"Ada"</span>, email=<span class="str">"ada@example.com"</span>,
+        password_hash=<span class="fn">hash_password</span>(<span class="str">"secret"</span>),
+        role=EmployeeRole.HR,
+    )
+
+<span class="hi">    monkeypatch.<span class="fn">setattr</span>(</span>
+<span class="hi">        <span class="str">"auth.service.employee_repo.get_by_email"</span>,</span>
+<span class="hi">        <span class="kw">lambda</span> _db, _email: fake_employee,</span>
+<span class="hi">    )</span>
+
+    token = auth_service.<span class="fn">login</span>(db=<span class="num">None</span>,
+                                email=<span class="str">"ada@example.com"</span>,
+                                password=<span class="str">"secret"</span>)
+    <span class="kw">assert</span> <span class="fn">isinstance</span>(token, <span class="typ">str</span>) <span class="kw">and</span> token</code></pre>
+
+  <div class="box box-blue mt1">
+    <p><strong>Read it like this:</strong> "for this test, when <code>auth.service</code> calls <code>employee_repo.get_by_email</code>, return <code>fake_employee</code> instead." No DB, no real lookup &mdash; just the behaviour we want to test.</p>
+  </div>
+
+  <div class="box box-orange mt1">
+    <p><strong>Tip:</strong> patch where the function is <em>used</em>, not where it&rsquo;s defined. We use <code>"auth.service.employee_repo.get_by_email"</code> because <code>auth.service</code> is the module that imported it.</p>
+  </div>
+
+  <div class="box box-purple mt1">
+    <p><strong>Why a plain <code>lambda</code> still works here:</strong> <code>auth_service.login()</code> is itself a sync function &mdash; it calls <code>employee_repo.get_by_email(...)</code> synchronously and uses the return value directly. A sync stub matches. When the caller is <code>async</code> and <code>await</code>s the dependency, the stub must return an awaitable &mdash; that&rsquo;s when you reach for <code>AsyncMock</code> (next slide).</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 42 — Mocking async dependencies
+     ============================================================ -->
+<section class="slide" id="s42">
+  <h1>Example 3 &mdash; Mocking an <code>async</code> Dependency with <code>AsyncMock</code></h1>
+  <p>Our repository is async: <code>department_repo.get_by_id(...)</code> is <code>async def</code>. The service <code>await</code>s it. A plain <code>Mock</code> returns a Mock object &mdash; <code>await</code> on that explodes. <code>AsyncMock</code> from <code>unittest.mock</code> returns an awaitable, so the service can <code>await</code> it like the real thing.</p>
+
+<pre><code><span class="kw">import</span> pytest
+<span class="kw">from</span> unittest.mock <span class="kw">import</span> AsyncMock
+
+<span class="kw">from</span> departments <span class="kw">import</span> service <span class="kw">as</span> department_service
+<span class="kw">from</span> exceptions <span class="kw">import</span> NotFoundException
+
+
+<span class="hi"><span class="kw">async</span> <span class="kw">def</span> <span class="fn">test_service_raises_when_repo_returns_none</span>(monkeypatch):</span>
+<span class="hi">    monkeypatch.<span class="fn">setattr</span>(</span>
+<span class="hi">        <span class="str">"departments.service.department_repo.get_by_id"</span>,</span>
+<span class="hi">        <span class="fn">AsyncMock</span>(return_value=<span class="num">None</span>),</span>           <span class="cm"># awaitable that resolves to None</span>
+<span class="hi">    )</span>
+
+    <span class="kw">with</span> pytest.<span class="fn">raises</span>(<span class="typ">NotFoundException</span>):
+<span class="hi">        <span class="kw">await</span> department_service.<span class="fn">get_by_id</span>(db=<span class="num">None</span>, department_id=<span class="num">1</span>)</span></code></pre>
+
+  <div class="cols mt1">
+    <div class="box box-green">
+      <h3>Why this matters</h3>
+      <ul>
+        <li>No SQLite needed &mdash; pure service logic test.</li>
+        <li>Proves the service&rsquo;s "missing &rArr; raise" branch deterministically.</li>
+        <li>Runs in microseconds.</li>
+      </ul>
+    </div>
+    <div class="box box-blue">
+      <h3><code>Mock</code> vs <code>AsyncMock</code></h3>
+      <ul>
+        <li><code>Mock(return_value=42)</code> &mdash; call returns <code>42</code> (not awaitable).</li>
+        <li><code>AsyncMock(return_value=42)</code> &mdash; call returns a coroutine that resolves to <code>42</code>.</li>
+        <li>Use <code>AsyncMock</code> whenever the caller does <code>await mock(...)</code>.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="box box-purple mt1">
+    <h3>👉 In Our Employee Management Project</h3>
+    <ul>
+      <li>Open <code>tests/handson_solutions/session2_solution.py::test_service_raises_when_repo_returns_none</code> &mdash; this is the canonical example.</li>
+      <li><strong>Try this now:</strong> swap <code>AsyncMock</code> for plain <code>Mock</code> and watch the failure (<code>TypeError: object Mock can't be used in 'await' expression</code>). That error is your hint that the target is async.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 42 — Recap mocking
+     ============================================================ -->
+<section class="slide" id="s43">
+  <h1>Mocking Recap</h1>
+
+  <div class="cols mt1">
+    <div>
+      <h3 style="color: var(--green);">Do</h3>
+      <ul>
+        <li>Use <code>monkeypatch</code> &mdash; pytest&rsquo;s built-in, auto-restored.</li>
+        <li>Mock anything slow / flaky / external (DB, network, email).</li>
+        <li>Patch where the function is <em>used</em>, not where it&rsquo;s defined.</li>
+        <li>Keep the mock setup small &mdash; one or two lines.</li>
+      </ul>
+    </div>
+    <div>
+      <h3 style="color: var(--red);">Avoid</h3>
+      <ul>
+        <li>Mocking everything &mdash; you end up testing the mock.</li>
+        <li>Mocking cheap, deterministic things (an in-memory SQLite session).</li>
+        <li>Rebuilding the same mock in 20 tests &mdash; promote it to a fixture.</li>
+        <li>Forgetting to assert that the mocked function was actually called.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="box box-blue mt1">
+    <p>Python also has <code>unittest.mock.Mock</code>, <code>AsyncMock</code>, and <code>patch</code> for more advanced cases. For this project: <code>monkeypatch</code> swaps the binding, <code>AsyncMock</code> wraps async dependencies, and <code>patch</code> scopes a swap to a <code>with</code> block.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     SECTION 6 — Integration testing
+     ============================================================ -->
+<section class="slide section-divider" id="s44">
+  <div class="section-number">06</div>
+  <h1>Integration Testing</h1>
+</section>
+
+<!-- ============================================================
+     SLIDE 44 — Beyond unit tests
+     ============================================================ -->
+<section class="slide" id="s45">
+  <h1>Beyond Unit Tests</h1>
+
+  <div class="cols mt1">
+    <div class="box box-blue">
+      <h3>What integration tests check</h3>
+      <p>That multiple components work together correctly:</p>
+      <ul>
+        <li>Route &rarr; service &rarr; repository &rarr; database.</li>
+        <li>Auth dependency &rarr; role checker &rarr; route.</li>
+        <li>Pydantic validation &rarr; exception handler &rarr; HTTP status.</li>
+      </ul>
+    </div>
+    <div class="box box-green">
+      <h3>What we already have</h3>
+      <p><code>tests/test_employees_api.py</code> uses <code>httpx.AsyncClient</code> + <code>ASGITransport</code> + in-memory SQLite (via <code>aiosqlite</code>) to integration-test the whole HTTP slice.</p>
+      <ul>
+        <li>Fast (milliseconds per test).</li>
+        <li>Hermetic (no shared state across runs).</li>
+        <li>Real code paths &mdash; only <code>get_db</code> is overridden.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="box box-orange mt1">
+    <p><strong>Where SQLite is not enough:</strong> migrations, Postgres-only features (native enums, JSONB), or anything that exercises database-driver behaviour. For those, real-service tests (covered next) take over.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 45 — End-to-End (E2E) testing — high-level
+     ============================================================ -->
+<section class="slide" id="s46">
+  <h1>End-to-End (E2E) Testing</h1>
+  <p>E2E tests check the <strong>whole product</strong> from the user&rsquo;s perspective &mdash; real browser, real backend, real database. They sit at the top of the test pyramid: most expensive, but the closest thing to real-world confidence.</p>
+
+  <div class="cols mt1">
+    <div class="box box-blue">
+      <h3>Why E2E matters</h3>
+      <ul>
+        <li>Catches bugs at the seams between systems (frontend &harr; backend &harr; DB).</li>
+        <li>Verifies the user journey actually works (login &rarr; create employee &rarr; see them in the list).</li>
+        <li>Highest confidence before a release.</li>
+      </ul>
+    </div>
+    <div class="box box-orange">
+      <h3>The trade-off</h3>
+      <ul>
+        <li>Slow &mdash; seconds per test.</li>
+        <li>Brittle &mdash; UI changes break them often.</li>
+        <li>Hard to debug when they fail.</li>
+        <li>Run a small handful, not hundreds.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="box box-green mt1">
+    <h3>Common tools</h3>
+    <ul>
+      <li><strong>Playwright</strong>, <strong>Cypress</strong>, <strong>Selenium</strong> &mdash; for browser-driven E2E tests.</li>
+      <li><strong>Postman / Newman</strong> &mdash; for API-level E2E flows.</li>
+      <li><strong>Testcontainers</strong> &mdash; spins up real Postgres/Redis in Docker when SQLite isn&rsquo;t enough.</li>
+    </ul>
+  </div>
+
+  <div class="box box-purple mt1">
+    <p><strong>For this training:</strong> we focus on unit + integration tests with pytest and TestClient. E2E is good to know about &mdash; you&rsquo;ll meet it on real projects.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 46 — Hands On (Session 2)
+     ============================================================ -->
+<section class="slide" id="s47">
+  <h1>👐 Hands On &mdash; Session 2 (10 min)</h1>
+  <p>Open <code>tests/test_handson_session2.py</code>. Three tests are stubbed. Each task exercises a different concept from the second half of the deck.</p>
+
+  <div class="mt1">
+    <div class="box box-blue">
+      <h3>Task 1 &mdash; <code>AsyncClient</code> + seeded data</h3>
+      <p><code>async def test_list_departments_returns_seeded_data(client, db_session)</code></p>
+      <ul>
+        <li>Seed two departments via <code>db_session.add(Department(name=&hellip;))</code> + <code>await db_session.commit()</code>.</li>
+        <li><code>await client.get("/departments")</code>.</li>
+        <li>Assert <code>200</code>, list length <code>2</code>, both names present.</li>
+      </ul>
+    </div>
+    <div class="box box-green">
+      <h3>Task 2 &mdash; JSON body update</h3>
+      <p><code>async def test_hr_can_update_employee_name(client, db_session)</code></p>
+      <ul>
+        <li>Seed an employee using the async helper provided in the file (awaits <code>commit</code> + <code>refresh</code>).</li>
+        <li><code>await client.put(f"/employees/{id}", json={"name": "Renamed Person"})</code>.</li>
+        <li>Assert <code>200</code> and the response name is updated.</li>
+      </ul>
+    </div>
+    <div class="box box-orange">
+      <h3>Task 3 &mdash; Mocking an async repo (the airbag)</h3>
+      <p><code>async def test_service_raises_when_repo_returns_none(monkeypatch)</code></p>
+      <ul>
+        <li><code>from unittest.mock import AsyncMock</code>.</li>
+        <li><code>monkeypatch.setattr("departments.service.department_repo.get_by_id", AsyncMock(return_value=None))</code>.</li>
+        <li>Inside <code>pytest.raises(NotFoundException)</code>, <code>await department_service.get_by_id(db=None, department_id=1)</code>.</li>
+        <li>No database needed &mdash; the airbag, in code.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="box box-purple mt1">
+    <p><strong>Run:</strong> <code>uv run pytest tests/test_handson_session2.py -v</code>. Solutions: <code>tests/handson_solutions/session2_solution.py</code>.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     SECTION 7 — Coverage
+     ============================================================ -->
+<section class="slide section-divider" id="s48">
+  <div class="section-number">07</div>
+  <h1>Coverage</h1>
+</section>
+
+<!-- ============================================================
+     SLIDE 48 — Coverage
+     ============================================================ -->
+<section class="slide" id="s49">
+  <h1>Coverage with <code>pytest-cov</code></h1>
+
+<pre><code><span class="cm"># Install once (already in our [dependency-groups].dev)</span>
+uv add --dev pytest-cov
+
+<span class="cm"># See which lines aren&rsquo;t executed by your tests</span>
+uv run pytest --cov=. --cov-report=term-missing
+
+<span class="cm"># HTML report you can open in a browser</span>
+uv run pytest --cov=. --cov-report=html
+open htmlcov/index.html</code></pre>
+
+<pre><code><span class="cm"># Sample output</span>
+Name                          Stmts   Miss  Cover   Missing
+------------------------------------------------------------
+auth/utils.py                    14      0   <span class="str">100%</span>
+auth/service.py                  10      0   <span class="str">100%</span>
+employees/service.py             45      4    <span class="str">91%</span>   62-65
+employees/router.py              38      2    <span class="str">95%</span>   80-81
+------------------------------------------------------------
+TOTAL                           107      6    <span class="str">94%</span></code></pre>
+
+  <div class="box box-orange mt1">
+    <p><strong>Coverage is a starting point, not a goal.</strong> 100% line coverage with weak assertions is worse than 70% with strong ones. Use coverage to find code that has <em>no</em> tests &mdash; not to chase a percentage.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     SECTION 8 — Recap & Best Practices
+     ============================================================ -->
+<section class="slide section-divider" id="s51">
+  <div class="section-number">08</div>
+  <h1>Recap &amp; Best Practices</h1>
+</section>
+
+<!-- ============================================================
+     SLIDE 51 — Best Practices
+     ============================================================ -->
+<section class="slide" id="s52">
+  <h1>Best Practices</h1>
+
+  <div class="cols mt1">
+    <div>
+      <h3 style="color: var(--green);">Do</h3>
+      <ul>
+        <li>Name tests after the behaviour, not the function.</li>
+        <li>Arrange &rarr; Act &rarr; Assert. Three blocks, in that order.</li>
+        <li>One logical assertion per test (multiple <code>assert</code>s are fine if they describe one outcome).</li>
+        <li>Make tests independent &mdash; no test should depend on another's output.</li>
+        <li>Use fixtures + factories to keep test bodies short.</li>
+        <li>Test edge cases: empty inputs, max values, missing fields, wrong roles.</li>
+      </ul>
+    </div>
+    <div>
+      <h3 style="color: var(--red);">Don't</h3>
+      <ul>
+        <li>Don't test the framework (<code>FastAPI</code>, <code>SQLAlchemy</code>) &mdash; test <em>your</em> code.</li>
+        <li>Don't share mutable fixtures across tests without scoping.</li>
+        <li>Don't sleep / wait in tests &mdash; mock time instead.</li>
+        <li>Don't commit a <code>.skip</code> without a tracked reason.</li>
+        <li>Don't print &mdash; assert.</li>
+        <li>Don't chase 100% coverage at the cost of meaningful assertions.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 52 — Key Takeaways
+     ============================================================ -->
+<section class="slide" id="s53">
+  <h1>Key Takeaways</h1>
+
+  <div class="mt1">
+    <div class="box box-blue">
+      <h3>1. Test the airbag, not the whole car</h3>
+      <p>Unit tests in isolation, with mocks. Catch defects before integration. Cheaper and faster than smashing the car.</p>
+    </div>
+    <div class="box box-green">
+      <h3>2. Pytest is just <code>def test_*():</code> + <code>assert</code></h3>
+      <p>Discovery by convention. Plain assertions with rich failure messages. Zero boilerplate. Fixtures for reuse.</p>
+    </div>
+    <div class="box box-orange">
+      <h3>3. <code>TestClient</code> + <code>dependency_overrides</code></h3>
+      <p>HTTP-shaped tests against your real app. Swap <code>get_db</code> for an in-memory SQLite session. Reach for test containers when SQLite would lie.</p>
+    </div>
+    <div class="box box-purple">
+      <h3>4. Mock with <code>monkeypatch</code></h3>
+      <p>Replace external calls (DB, network, env vars) with fakes for the duration of a test &mdash; auto-restored when the test ends. Patch where the function is <em>used</em>.</p>
+    </div>
+    <div class="box box-red">
+      <h3>5. Tests are part of the contract</h3>
+      <p>Cover route &rarr; service &rarr; repo flow. Auth &amp; roles. Validation. Error paths. Coverage is a tool, not a target.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 53 — Exercises
+     ============================================================ -->
+<section class="slide" id="s54">
+  <h1>Exercises</h1>
+  <div class="mt1">
+    <div class="box box-blue">
+      <h3>Exercise 1: Departments CRUD tests</h3>
+      <p>Mirror <code>tests/test_employees_api.py</code> for departments. Cover create / list / get / update / delete and the 404 / 422 paths. Decide which need HR auth.</p>
+    </div>
+    <div class="box box-green">
+      <h3>Exercise 2: Address validation</h3>
+      <p>Write tests that assert <code>AddressCreate</code> rejects bad postal codes for US (must be 5 digits) and IN (6 digits), and accepts good ones. One test per case.</p>
+    </div>
+    <div class="box box-orange">
+      <h3>Exercise 3: Mock <code>create_access_token</code></h3>
+      <p>Write a test for <code>auth_service.login</code> that mocks <code>create_access_token</code> and asserts it was called with <code>{id, email, role}</code>. No DB needed.</p>
+    </div>
+    <div class="box box-purple">
+      <h3>Exercise 4: Token expiry</h3>
+      <p>Use <code>monkeypatch</code> to fast-forward <code>datetime.now</code> by an hour. Assert that <code>decode_access_token</code> returns <code>None</code> for the now-expired token.</p>
+    </div>
+    <div class="box box-red">
+      <h3>Exercise 5: Coverage gap</h3>
+      <p>Run <code>pytest --cov=. --cov-report=term-missing</code>. Pick one uncovered branch and write the test that covers it. Commit both.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 54 — Resources
+     ============================================================ -->
+<section class="slide" id="s55">
+  <h1>Resources</h1>
+  <div class="mt1">
+    <div class="box box-blue">
+      <h3>Official Documentation</h3>
+      <ul>
+        <li>Pytest: <code>https://docs.pytest.org/</code></li>
+        <li>Pytest fixtures: <code>https://docs.pytest.org/en/stable/explanation/fixtures.html</code></li>
+        <li>FastAPI testing: <code>https://fastapi.tiangolo.com/tutorial/testing/</code></li>
+        <li>Dependency overrides: <code>https://fastapi.tiangolo.com/advanced/testing-dependencies/</code></li>
+        <li><code>unittest.mock</code>: <code>https://docs.python.org/3/library/unittest.mock.html</code></li>
+        <li><code>pytest-cov</code>: <code>https://pytest-cov.readthedocs.io/</code></li>
+        <li>Testcontainers (Python): <code>https://testcontainers-python.readthedocs.io/</code></li>
+      </ul>
+    </div>
+    <div class="box box-green">
+      <h3>This Codebase</h3>
+      <ul>
+        <li>Shared fixtures &amp; TestClient: <code>tests/conftest.py</code></li>
+        <li>Pure unit tests: <code>tests/test_auth_utils.py</code></li>
+        <li>Service tests: <code>tests/test_employee_service.py</code></li>
+        <li>HTTP / integration tests: <code>tests/test_employees_api.py</code></li>
+        <li>Mocking demo: <code>tests/test_mocking_demo.py</code></li>
+        <li>Fixture scope demo: <code>tests/test_fixtures_demo.py</code></li>
+        <li>Pytest config: <code>pyproject.toml</code> &mdash; <code>[tool.pytest.ini_options]</code></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     SLIDE 55 — Sleep at night closer
+     ============================================================ -->
+<section class="slide hero-slide" id="s56">
+  <h1>What Helps You Sleep at Night?</h1>
+  <p class="big-quote" style="margin-top: 2rem;">A good unit test coverage. 😴</p>
+  <p class="lead" style="margin-top: 2rem;">When the pager goes off at 3am, your tests are the friend who already checked everything you forgot.</p>
+</section>
+
+<!-- ── Navigation bar ──────────────────────────────── -->
+<div class="nav">
+  <button id="prevBtn" onclick="changeSlide(-1)">&larr; Previous</button>
+  <span id="progress">1 / 56</span>
+  <button id="nextBtn" onclick="changeSlide(1)">Next &rarr;</button>
+</div>
+
+<script>
+  let current = 0;
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+
+  function showSlide(n) {
+    slides.forEach(s => s.classList.remove('active'));
+    current = Math.max(0, Math.min(n, total - 1));
+    slides[current].classList.add('active');
+    document.getElementById('progress').textContent = `${current + 1} / ${total}`;
+    document.getElementById('prevBtn').disabled = current === 0;
+    document.getElementById('nextBtn').disabled = current === total - 1;
+  }
+
+  function changeSlide(dir) { showSlide(current + dir); }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); changeSlide(1); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); changeSlide(-1); }
+    if (e.key === 'Home') { e.preventDefault(); showSlide(0); }
+    if (e.key === 'End') { e.preventDefault(); showSlide(total - 1); }
+  });
+
+  showSlide(0);
+</script>
+</body>
+</html>
