@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from database.connection import get_db
 import employees.service as service
@@ -13,6 +13,7 @@ from employees.schema import (
 from auth.dependencies import get_current_user, require_role
 from auth.schema import TokenPayload
 from models.employee import EmployeeRole
+from fastapi.responses import Response
 
 router = APIRouter(prefix="/employee", tags=["Employee"])
 
@@ -43,13 +44,14 @@ async def get_employee(
     return await service.get_employee(employee_id, db)
 
 
-@router.delete("/{employee_id}", response_model=EmployeeResponse)
+@router.delete("/{employee_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_employee(
     employee_id: int,
     db: AsyncSession = Depends(get_db),
     current_user: TokenPayload = Depends(require_role(EmployeeRole.HR)),
 ):
-    return await service.delete_employee(employee_id, db)
+    await service.delete_employee(employee_id, db)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.patch("/{employee_id}", response_model=EmployeeResponse)
@@ -90,7 +92,9 @@ async def get_all_addresses(
     return await service.get_all_addresses(employee_id, db)
 
 
-@router.delete("{employee_id}/address/{address_id}", response_model=AddressResponse)
+@router.delete(
+    "{employee_id}/address/{address_id}", status_code=status.HTTP_204_NO_CONTENT
+)
 async def delete_address(
     employee_id: int,
     address_id: int,
@@ -98,7 +102,8 @@ async def delete_address(
     current_user: TokenPayload = Depends(get_current_user),
     TokenPayload=Depends(require_role(EmployeeRole.HR)),
 ):
-    return await service.delete_address(employee_id, address_id, db)
+    await service.delete_employee(employee_id, address_id, db)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.patch("/address/{address_id}", response_model=AddressResponse)
@@ -124,7 +129,7 @@ async def add_department_to_employee(
 
 
 @router.delete(
-    "/{employee_id}/department/{department_id}", response_model=EmployeeResponse
+    "/{employee_id}/department/{department_id}", status_code=status.HTTP_204_NO_CONTENT
 )
 async def delete_department_from_employee(
     employee_id: int,
@@ -132,4 +137,5 @@ async def delete_department_from_employee(
     db: AsyncSession = Depends(get_db),
     current_user: TokenPayload = Depends(require_role(EmployeeRole.HR)),
 ):
-    return await service.delete_department_from_employee(employee_id, department_id, db)
+    await service.delete_department_from_employee(employee_id, department_id, db)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
