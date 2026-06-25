@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, status
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from database.connection import get_db
 import employees.service as service
@@ -29,10 +31,13 @@ async def create_employee(
 
 @router.get("", response_model=list[EmployeeResponse])
 async def get_all_employees(
+    filters: Annotated[list[str] | None, Query(alias="filter")] = ["ACTIVE", "INACTIVE", "PROBATION"],
+    limit: int = Query(100, ge=0),
+    offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
     current_user: TokenPayload = Depends(get_current_user),
 ):
-    return await service.get_all_employees(db)
+    return await service.get_all_employees(db, filters, limit, offset)
 
 
 @router.get("/{employee_id}", response_model=EmployeeResponse)

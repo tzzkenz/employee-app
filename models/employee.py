@@ -1,5 +1,6 @@
 from sqlalchemy import Enum, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from starlette import status
 from models import Entity
 from models.department import employee_departments
 import enum
@@ -10,6 +11,11 @@ class EmployeeRole(str, enum.Enum):
     UX = "UX"
     DEVELOPER = "DEVELOPER"
     HR = "HR"
+
+class EmployeeStatus(str, enum.Enum):
+    ACTICE = "ACTIVE"
+    INACTICE = "INACTIVE"
+    PROBATION = "PROBATION"
 
 
 class Employee(Entity):
@@ -32,6 +38,16 @@ class Employee(Entity):
         Enum(
             EmployeeRole,
             name="employeerole",
+            values_callable=lambda enum_cls: [e.value for e in enum_cls],
+        ),
+        nullable=False,
+        server_default=EmployeeRole.DEVELOPER.value,
+    )
+
+    status: Mapped[EmployeeRole] = mapped_column(
+        Enum(
+            EmployeeStatus,
+            name="employeestatus",
             values_callable=lambda enum_cls: [e.value for e in enum_cls],
         ),
         nullable=False,

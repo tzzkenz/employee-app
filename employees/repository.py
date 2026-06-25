@@ -22,9 +22,13 @@ async def create_employee(employee: Employee, db: AsyncSession) -> Employee:
     return await save(employee, db)
 
 
-async def get_all_employees(db: AsyncSession) -> list[Employee]:
-    statement = select(Employee).where(Employee.deleted_at.is_(None))
-    result = await db.scalars(statement)
+async def get_all_employees(db: AsyncSession, filters, limit, offset) -> list[Employee]:
+    if filters != ["STATUS"]:
+        statement = select(Employee).where(Employee.deleted_at.is_(None), Employee.status.in_(filters))
+    else:
+        statement = select(Employee).where(Employee.deleted_at.is_(None))
+
+    result = await db.scalars(statement.limit(limit).offset(offset))
     return result.all()
 
 

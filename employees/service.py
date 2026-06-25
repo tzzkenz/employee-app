@@ -19,6 +19,7 @@ async def create_employee(body: EmployeeCreate, db: AsyncSession) -> Employee:
     employee.email = body.email.strip()
     employee.password_hash = hash_password(body.password)
     employee.role = body.role
+    employee.status = body.status
 
     if body.address:
         address = Address()
@@ -32,12 +33,13 @@ async def create_employee(body: EmployeeCreate, db: AsyncSession) -> Employee:
     try:
         employee = await repository.create_employee(employee, db)
         return employee
-    except IntegrityError:
+    except IntegrityError as e:
+        print(e)
         raise ConflictException(detail=f"{body.email} already in use")
 
 
-async def get_all_employees(db: AsyncSession) -> list[Employee]:
-    employees = await repository.get_all_employees(db)
+async def get_all_employees(db: AsyncSession, filters, limit, offset) -> list[Employee]:
+    employees = await repository.get_all_employees(db, filters, limit, offset)
 
     return employees
 
@@ -77,6 +79,9 @@ async def patch_employee(
         original_employee.email = body.email.strip()
     if body.age is not None:
         original_employee.age = body.age
+    if body.status is not None:
+        original_employee.status = body.status
+
 
     try:
         patched_employee = await repository.patch_employee(db, original_employee)

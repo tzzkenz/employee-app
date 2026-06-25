@@ -1,16 +1,23 @@
+from datetime import datetime
 import re
+from datetime import timezone
+from typing import Annotated
 
 from pydantic import (
+    AfterValidator,
     BaseModel,
     ConfigDict,
     EmailStr,
     Field,
+    computed_field,
     field_validator,
     model_validator,
 )
 
 from exceptions import BadRequestException
-from models.employee import EmployeeRole
+from models import employee
+from models.employee import EmployeeRole, EmployeeStatus
+
 
 
 class AddressCreate(BaseModel):
@@ -51,6 +58,7 @@ class EmployeeCreate(BaseModel):
     )
     password: str = Field(min_length=8)
     role: EmployeeRole
+    status: EmployeeStatus
 
     @field_validator("password")
     @classmethod
@@ -69,6 +77,21 @@ class EmployeePatch(BaseModel):
     name: str | None = Field(min_length=2, default=None)
     email: EmailStr | None = Field(default=None)
     age: int | None = Field(default=None, ge=18, le=65)
+    status: EmployeeStatus
+
+    model_config = ConfigDict(extra='allow')
+
+    @model_validator(mode="after")
+    def validate_status_vs_experience(self):
+        time = datetime.fromisoformat(self.created_at)
+        if self.status and time:
+            print("hitttttt", type(time))
+            experience = (datetime.now(timezone.utc) - time).days
+            if experience < 6 and self.status not in ( EmployeeStatus.PROBATION, EmployeeStatus.INACTICE):
+                raise BadRequestException("BAAAAD")
+        return self
+    
+
 
 
 class AddressResponse(BaseModel):
@@ -117,5 +140,12 @@ class EmployeeResponse(BaseModel):
     email: EmailStr
     age: int
     role: EmployeeRole
+    created_at: datetime
+    status: EmployeeStatus
 
+    @computed_field
+    @property
+    def experience(self) -> float:
+        now = datetime.now(timezone.utc)
+        return round((now - self.created_at).days)
     model_config = ConfigDict(from_attributes=True)
